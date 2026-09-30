@@ -1,0 +1,2941 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xtratega.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* STREAMING_CHUNK:Initializing font imports and keyframes... */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700;900&display=swap');
+
+
+@keyframes gradientBG {
+0% { background-position: 0% 50%; }
+50% { background-position: 100% 50%; }
+100% { background-position: 0% 50%; }
+}
+@keyframes rainbowText {
+0%   { background-position: 0% 50%; }
+100% { background-position: 300% 50%; }
+}
+@keyframes slideIn {
+from { transform: translateX(400px) rotate(8deg); opacity: 0; }
+to { transform: translateX(0) rotate(0); opacity: 1; }
+}
+@keyframes fadeOut {
+to { opacity: 0; transform: translateX(400px); }
+}
+@keyframes shimmer {
+0% { background-position: -200% 0; }
+100% { background-position: 200% 0; }
+}
+@keyframes pulseGlow {
+0%,100% { box-shadow: 0 0 18px rgba(0,255,128,0.7), 0 0 32px rgba(0,255,255,0.5); }
+50% { box-shadow: 0 0 34px rgba(128,255,0,0.95), 0 0 60px rgba(0,255,180,0.8); }
+}
+@keyframes bounceBadge {
+0%,100% { transform: translateY(0) scale(1); }
+50% { transform: translateY(-3px) scale(1.15); }
+}
+@keyframes wiggle {
+0%,100% { transform: rotate(-3deg); }
+50% { transform: rotate(3deg); }
+}
+@keyframes hueRotate {
+0% { filter: hue-rotate(0deg); }
+100% { filter: hue-rotate(360deg); }
+}
+@keyframes floatUp {
+0%,100% { transform: translateY(0); }
+50% { transform: translateY(-6px); }
+}
+
+/* STREAMING_CHUNK:Configuring body styling and animations... */
+body {
+font-family: 'Inter', sans-serif;
+user-select: none;
+overflow: hidden;
+background: linear-gradient(-45deg,
+#00ff66, #003322, #00ffcc, #33ff00,
+#00b359, #006633, #00ffff, #99ff00) !important;
+background-size: 500% 500% !important;
+animation: gradientBG 8s ease infinite;
+text-shadow: 0 0 6px rgba(0,255,128,0.25);
+}
+.font-cinzel { font-family: 'Cinzel', serif; }
+
+/* ============================================================
+TABLERO DE CIUDAD
+============================================================ /
+/ STREAMING_CHUNK:Defining city grid styling and neon matrix borders... */
+#city-grid {
+--cs: 26px;
+display: grid;
+grid-template-columns: repeat(100, var(--cs));
+grid-auto-rows: var(--cs);
+gap: 2px;
+padding: 8px;
+border-radius: 18px;
+width: max-content;
+background:
+conic-gradient(from 90deg,
+rgba(0,255,128,0.25), rgba(0,255,255,0.25),
+rgba(128,255,0,0.25), rgba(0,204,102,0.25),
+rgba(0,255,128,0.25)) !important;
+border: 3px dashed #00ff88 !important;
+box-shadow:
+0 0 40px rgba(0,255,128,0.7),
+0 0 80px rgba(0,255,255,0.5),
+inset 0 0 40px rgba(128,255,0,0.3);
+animation: hueRotate 10s linear infinite;
+}
+
+.grid-cell {
+position: relative;
+width: var(--cs);
+height: var(--cs);
+border-radius: 6px;
+border: 1px solid transparent;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+overflow: hidden;
+contain: layout paint style;
+transition: transform .12s ease, filter .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.grid-cell.empty {
+background: linear-gradient(135deg, rgba(0,255,128,0.28), rgba(0,100,60,0.18));
+border-color: rgba(0,255,180,0.4);
+}
+.grid-cell.empty:hover {
+background: linear-gradient(135deg, #00ff88, #00ffff);
+border-color: #99ff00;
+box-shadow: 0 0 18px #00ff88, 0 0 30px #00ffff;
+z-index: 5;
+}
+.grid-cell.filled {
+flex-direction: column;
+background: linear-gradient(135deg, #00b359, #003322);
+border-color: #99ff00;
+box-shadow: 0 0 10px rgba(153,255,0,0.7);
+}
+.grid-cell.filled.t-goods    { background: linear-gradient(135deg, #00ffaa, #00ffff); border-color: #00ff88; }
+.grid-cell.filled.t-military { background: linear-gradient(135deg, #006622, #00b33c); border-color: #99ff00; }
+.grid-cell.filled.t-cultural { background: linear-gradient(135deg, #33ff00, #00cc66); border-color: #ffff00; }
+.grid-cell:hover {
+transform: scale(1.25) rotate(3deg);
+filter: brightness(1.6) saturate(1.6);
+box-shadow:
+0 0 18px rgba(153,255,0,0.95),
+0 0 34px rgba(0,255,128,0.85),
+0 0 50px rgba(0,255,255,0.7);
+z-index: 10;
+}
+
+.cell-icon {
+font-size: calc(var(--cs) * 0.55);
+line-height: 1;
+color: #fff !important;
+filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 8px #99ff00);
+}
+.cell-name {
+display: none;
+font-size: max(6px, calc(var(--cs) * 0.2));
+font-weight: 900;
+color: #99ff00;
+text-shadow: 0 0 4px #00ff66, 0 0 8px #000;
+max-width: calc(var(--cs) - 4px);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+margin-top: 1px;
+}
+#city-grid.show-labels .cell-name { display: block; }
+
+.progress-bar {
+position: absolute;
+bottom: 0;
+left: 0;
+height: max(3px, calc(var(--cs) * 0.12));
+background: linear-gradient(90deg, #99ff00, #00ff88, #00ffff, #99ff00);
+background-size: 200% auto;
+animation: rainbowText 1.5s linear infinite;
+transition: width 0.4s linear;
+box-shadow: 0 0 12px #99ff00, 0 0 20px #00ffff;
+pointer-events: none;
+}
+
+.level-badge {
+position: absolute;
+bottom: 0;
+right: 1px;
+background: linear-gradient(135deg, #99ff00, #00ff88, #00ffff);
+color: #002211;
+font-weight: 900;
+font-size: max(7px, calc(var(--cs) * 0.32));
+line-height: 1;
+padding: 1px 3px;
+border-radius: 4px;
+border: 1px solid #fff;
+pointer-events: none;
+box-shadow: 0 0 8px #99ff00;
+}
+
+.ready-badge {
+position: absolute;
+top: 0;
+right: 0;
+background: linear-gradient(135deg, #99ff00, #00ff66);
+color: #002211;
+font-weight: 900;
+font-size: max(8px, calc(var(--cs) * 0.34));
+line-height: 1;
+min-width: 11px;
+min-height: 11px;
+width: calc(var(--cs) * 0.45);
+height: calc(var(--cs) * 0.45);
+border-radius: 9999px;
+display: flex;
+align-items: center;
+justify-content: center;
+animation: bounceBadge 0.8s infinite;
+z-index: 3;
+box-shadow: 0 0 12px #99ff00, 0 0 22px #00ff66;
+border: 1px solid #fff;
+}
+
+#city-scroller { scroll-behavior: auto; }
+#city-scroller.grabbing { cursor: grabbing; }
+#city-scroller::-webkit-scrollbar { width: 12px; height: 12px; }
+
+/* STREAMING_CHUNK:Styling scrollbars and glow utility classes... */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: #001a11; }
+::-webkit-scrollbar-thumb {
+background: linear-gradient(180deg, #99ff00, #00ff88, #00ffff, #99ff00);
+background-size: 100% 300%;
+border-radius: 6px;
+border: 2px solid #000;
+}
+::-webkit-scrollbar-thumb:hover {
+background: linear-gradient(180deg, #00ffff, #99ff00, #00ff88, #00ffff);
+}
+
+.glow-gold { box-shadow: 0 0 24px #99ff00, 0 0 48px #00ff88; }
+.glow-purple { box-shadow: 0 0 24px #00ffff, 0 0 48px #0088ff; }
+.glow-cyan { box-shadow: 0 0 24px #00ffff, 0 0 48px #00ffcc; }
+
+header {
+background: linear-gradient(90deg, #00ff66, #003322, #00ffff, #99ff00) !important;
+background-size: 300% 100% !important;
+animation: rainbowText 6s linear infinite;
+backdrop-filter: blur(12px);
+border-bottom: 3px solid #99ff00 !important;
+box-shadow: 0 6px 30px rgba(0,255,128,0.6), 0 0 60px rgba(0,255,255,0.4);
+}
+nav {
+background: linear-gradient(180deg, #003322, #00ff66, #99ff00, #00ffff) !important;
+background-size: 100% 300% !important;
+animation: rainbowText 8s linear infinite;
+backdrop-filter: blur(10px);
+border-right: 3px solid #99ff00 !important;
+box-shadow: 6px 0 30px rgba(0,255,128,0.5);
+}
+
+/* STREAMING_CHUNK:Styling panels, sections, and structural cards... */
+#modal-build > div, #modal-info > div, #modal-hero > div,
+section#view-city, section#view-tech, section#view-map,
+section#view-inventory, section#view-army, section#view-heroes,
+section#view-achievements, section#view-wonders,
+section#view-missions, section#view-market {
+background: linear-gradient(135deg, rgba(0,51,34,0.85), rgba(0,128,77,0.85)) !important;
+backdrop-filter: blur(16px);
+border: 3px dashed #99ff00 !important;
+box-shadow: 0 0 40px rgba(153,255,0,0.6), inset 0 0 30px rgba(0,255,255,0.3);
+}
+
+.bg-slate-900, .bg-slate-800 {
+background: linear-gradient(135deg, #006633, #002211, #008855) !important;
+background-size: 200% 200% !important;
+border: 2px solid #99ff00 !important;
+box-shadow: 0 0 20px rgba(153,255,0,0.6), 0 8px 32px rgba(0,0,0,0.5);
+color: #fff !important;
+}
+.bg-slate-900:hover, .bg-slate-800:hover {
+border-color: #00ffff !important;
+box-shadow: 0 0 30px #00ffff, 0 0 60px #00ff88;
+transform: translateY(-2px);
+}
+
+.bg-amber-600, .bg-amber-500 {
+background: linear-gradient(135deg, #99ff00, #00ff88, #00ffff) !important;
+background-size: 200% auto !important;
+animation: rainbowText 3s linear infinite;
+border: 2px solid #fff !important;
+box-shadow: 0 0 24px #99ff00, 0 0 48px #00ff88;
+color: #002211 !important;
+font-weight: 900;
+}
+.bg-amber-600:hover, .bg-amber-500:hover {
+background: linear-gradient(135deg, #00ffff, #99ff00, #00ff88) !important;
+background-size: 200% auto !important;
+transform: scale(1.05) rotate(-1deg);
+box-shadow: 0 0 40px #00ffff, 0 0 80px #99ff00;
+}
+
+.toast {
+animation: slideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), fadeOut 0.4s ease-in 3.4s forwards;
+}
+
+/* STREAMING_CHUNK:Refining text effects, heroes, and market cards... */
+.shimmer-text {
+background: linear-gradient(90deg,
+#99ff00, #00ff88, #00ffff, #99ff00,
+#00ffbb, #99ff00);
+background-size: 300% auto;
+-webkit-background-clip: text;
+background-clip: text;
+-webkit-text-fill-color: transparent;
+animation: shimmer 2s linear infinite;
+font-weight: 900;
+filter: drop-shadow(0 0 8px rgba(153,255,0,0.8));
+}
+
+.hero-card {
+background: linear-gradient(135deg, #00b359, #006633, #99ff00) !important;
+border: 3px solid #00ffff !important;
+box-shadow: 0 0 24px #00b359, 0 0 48px #99ff00;
+animation: floatUp 3s ease-in-out infinite;
+}
+.hero-card.locked {
+filter: grayscale(0.9) brightness(0.5);
+opacity: 0.7;
+animation: none;
+}
+
+.wonder-card {
+background: linear-gradient(135deg, #99ff00, #00ff88, #00ffff) !important;
+border: 3px solid #fff !important;
+box-shadow: 0 0 30px #99ff00, 0 0 60px #00ff88;
+animation: pulseGlow 2s ease-in-out infinite;
+}
+.wonder-card.completed {
+background: linear-gradient(135deg, #00ffff, #99ff00, #00ff88) !important;
+box-shadow: 0 0 50px #00ffff, 0 0 100px #99ff00;
+animation: wiggle 2s ease-in-out infinite;
+}
+
+.stat-chip {
+background: linear-gradient(135deg, #006633, #003322) !important;
+border: 2px solid #99ff00 !important;
+border-radius: 12px;
+padding: 6px 12px;
+display: flex;
+align-items: center;
+gap: 8px;
+box-shadow: 0 0 14px #006633, 0 0 28px #99ff00;
+transition: transform .2s ease;
+}
+.stat-chip:hover {
+transform: scale(1.08) rotate(-2deg);
+box-shadow: 0 0 22px #00ffff, 0 0 44px #006633;
+}
+
+.mission-card {
+background: linear-gradient(135deg, #00ff88, #003366, #00b359) !important;
+border: 3px solid #99ff00 !important;
+box-shadow: 0 0 20px #00ff88, 0 0 40px #006633;
+transition: all 0.3s ease;
+}
+.mission-card:hover {
+border-color: #00ffff !important;
+transform: translateY(-4px) rotate(1deg) scale(1.02);
+box-shadow: 0 0 40px #00ff88, 0 0 80px #99ff00;
+}
+.mission-card.claimed {
+opacity: 0.55;
+filter: grayscale(0.6) brightness(0.8);
+}
+.mission-card.completed-ready {
+border-color: #99ff00 !important;
+background: linear-gradient(135deg, #99ff00, #00ff88, #00ffff) !important;
+animation: pulseGlow 1.2s ease-in-out infinite;
+}
+
+.market-card {
+background: linear-gradient(135deg, #00ff88, #00ffff, #006633) !important;
+border: 3px solid #99ff00 !important;
+box-shadow: 0 0 20px #00ff88, 0 0 40px #00ffff;
+transition: all 0.25s ease;
+}
+.market-card:hover {
+border-color: #00ff88 !important;
+transform: translateY(-4px) rotate(-1deg) scale(1.02);
+box-shadow: 0 0 40px #00ff88, 0 0 80px #00ff88;
+}
+
+.xp-bar-header {
+width: 56px; height: 8px;
+background: #000;
+border-radius: 4px;
+overflow: hidden;
+border: 2px solid #99ff00;
+box-shadow: 0 0 10px #99ff00;
+}
+.xp-fill {
+height: 100%;
+background: linear-gradient(90deg, #99ff00, #00ff88, #00ffff, #99ff00);
+background-size: 200% auto;
+animation: rainbowText 2s linear infinite;
+transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+box-shadow: 0 0 12px #99ff00, 0 0 20px #00ff88;
+}
+
+/* STREAMING_CHUNK:Styling action buttons, borders, and final accents... */
+.bg-red-800, .bg-red-700, .bg-red-600, .bg-red-950/60, .bg-red-900 {
+background: linear-gradient(135deg, #008040, #00b359) !important;
+box-shadow: 0 0 20px #008040 !important;
+border: 2px solid #99ff00 !important;
+color: #fff !important;
+}
+.bg-emerald-700, .bg-emerald-600, .bg-emerald-500 {
+background: linear-gradient(135deg, #00ff88, #00ffff, #99ff00) !important;
+box-shadow: 0 0 20px #00ff88 !important;
+border: 2px solid #fff !important;
+color: #002211 !important;
+}
+.bg-emerald-700:hover, .bg-emerald-600:hover, .bg-emerald-500:hover,
+.bg-red-800:hover, .bg-red-700:hover, .bg-red-600:hover {
+transform: scale(1.08) rotate(-1deg);
+box-shadow: 0 0 40px #99ff00, 0 0 80px #00ffff !important;
+}
+
+.build-cat-btn.active,
+.build-cat-btn:hover {
+background: linear-gradient(135deg, #00ff88, #99ff00) !important;
+color: #002211 !important;
+text-shadow: none;
+}
+
+.text-slate-100, .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500 {
+text-shadow: 0 0 4px rgba(255,255,255,0.5), 0 0 8px rgba(0,255,128,0.4);
+}
+.text-slate-400, .text-slate-500 { color: #99ff00 !important; }
+
+[class*="border-slate"] {
+border-color: #99ff00 !important;
+box-shadow: 0 0 8px rgba(153,255,0,0.4);
+}
+
+#modal-build, #modal-info {
+background: radial-gradient(circle, rgba(0,51,34,0.85), rgba(0,102,68,0.9)) !important;
+backdrop-filter: blur(10px);
+}
+
+#toast-container > div {
+border-width: 3px !important;
+box-shadow: 0 0 30px #99ff00, 0 0 60px #00ff88 !important;
+}
+
+.nav-tab {
+transition: all .25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.nav-tab:hover {
+transform: translateX(4px) scale(1.12) rotate(-4deg);
+background: linear-gradient(135deg, #99ff00, #00ff88) !important;
+color: #002211 !important;
+box-shadow: 0 0 20px #99ff00, 0 0 40px #00ff88 !important;
+}
+
+#city-scroller {
+background:
+radial-gradient(ellipse at 30% 20%, rgba(0,255,128,0.35), transparent 60%),
+radial-gradient(ellipse at 70% 80%, rgba(0,255,255,0.35), transparent 60%),
+radial-gradient(ellipse at 50% 50%, rgba(153,255,0,0.25), transparent 70%),
+linear-gradient(135deg, #001a0d, #00331a, #001a1a) !important;
+}
+
+header .font-cinzel {
+color: #002211;
+text-shadow: 0 0 6px #99ff00;
+}
+
+input[type="checkbox"] {
+accent-color: #00ff88;
+filter: drop-shadow(0 0 4px #99ff00);
+}
+
+header i, nav i {
+filter: drop-shadow(0 0 5px #99ff00) drop-shadow(0 0 10px #00ff88);
+}
+
+/* Elimina el contorno/borde punteado cuando el elemento recibe el foco o selección */
+#big1,
+#big1:focus,
+#big1:focus-visible {
+    outline: none !important;
+}
+
+/* Configura el contenedor con la altura que indicaste y un borde sólido limpio en lugar de punteado */
+#big1 {
+    height: 256px;
+    border-bottom: 2px solid #00ff66; /* Asegura que el borde sea sólido y verde neón */
+    box-shadow: 0 0 10px rgba(0, 255, 102, 0.4); /* Opcional: le da un brillo neón sutil y elegante */
+}
+
+</style>
+</head>
+<body class="h-full text-slate-100 flex flex-col bg-slate-950">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 border-b border-amber-900/40 px-4 py-2.5 flex flex-wrap justify-between items-center z-20 shadow-xl relative">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 p-2.5 rounded-xl shadow-md border border-amber-300/40 flex items-center justify-center font-bold">
+                <i class="fa-solid font-cinzel text-xl">FE</i>
+            </div>
+            <div>
+                <h1 class="font-cinzel text-lg font-bold shimmer-text leading-tight tracking-wide">Xtratega</h1>
+                <span id="current-era-display" class="text-xs text-amber-200/80 font-semibold uppercase tracking-wider">Edad de Bronce</span>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-sm font-semibold my-1 md:my-0">
+            <div class="stat-chip" title="Nivel de Imperio y XP">
+                <i class="fa-solid fa-star text-yellow-400"></i>
+                <span class="text-yellow-200 font-bold text-xs">Nv.<span id="res-level">1</span></span>
+                <div class="xp-bar-header"><div id="res-xp-bar" class="xp-fill" style="width:0%"></div></div>
+                <span id="res-xp-label" class="text-[10px] text-yellow-200/70 font-medium">0/100</span>
+            </div>
+            <div class="stat-chip" title="Monedas">
+                <i class="fa-solid fa-coins text-amber-400"></i>
+                <span id="res-coins" class="text-amber-200 font-bold">300</span>
+            </div>
+            <div class="stat-chip" title="Diamantes">
+                <i class="fa-solid fa-gem text-cyan-400"></i>
+                <span id="res-diamonds" class="text-cyan-200 font-bold">0</span>
+            </div>
+            <div class="stat-chip" title="Población">
+                <i class="fa-solid fa-users text-blue-400"></i>
+                <span id="res-pop" class="text-blue-200 font-bold">10 / 10</span>
+            </div>
+            <div class="stat-chip" title="Felicidad">
+                <i class="fa-solid fa-face-smile text-emerald-400"></i>
+                <span id="res-happiness" class="text-emerald-200 font-bold">100%</span>
+            </div>
+            <div class="stat-chip" title="Bienes distintos">
+                <i class="fa-solid fa-boxes-stacked text-purple-400"></i>
+                <span id="res-goods" class="text-purple-200 font-bold">0</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button onclick="saveGame()" class="bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition font-medium" title="Guardar partida">
+                <i class="fa-solid fa-floppy-disk"></i>
+            </button>
+            <button onclick="resetGame()" class="bg-red-950/60 hover:bg-red-900 text-red-200 text-xs px-2.5 py-1.5 rounded-lg border border-red-800/50 transition" title="Reiniciar">
+                <i class="fa-solid fa-rotate-left"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden relative">
+        <!-- NAV -->
+        <nav class="w-16 md:w-20 bg-slate-900 border-r border-slate-800/80 flex flex-col items-center py-3 space-y-2 z-10 overflow-y-auto">
+            <button onclick="switchTab('city')" id="tab-city" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-amber-600 text-white shadow-lg transition">
+                <i class="fa-solid fa-city text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Ciudad</span>
+            </button>
+            <button onclick="switchTab('tech')" id="tab-tech" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <i class="fa-solid fa-flask text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Tecnología</span>
+            </button>
+            <button onclick="switchTab('map')" id="tab-map" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <i class="fa-solid fa-map-marked-alt text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Campaña</span>
+            </button>
+            <button onclick="switchTab('inventory')" id="tab-inventory" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <i class="fa-solid fa-boxes-stacked text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Bienes</span>
+            </button>
+            <button onclick="switchTab('army')" id="tab-army" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <i class="fa-solid fa-shield-halved text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Ejército</span>
+            </button>
+            <button onclick="switchTab('heroes')" id="tab-heroes" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <i class="fa-solid fa-crown text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Héroes</span>
+            </button>
+            <button onclick="switchTab('wonders')" id="tab-wonders" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <i class="fa-solid fa-monument text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Maravillas</span>
+            </button>
+            <button onclick="switchTab('missions')" id="tab-missions" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition relative">
+                <i class="fa-solid fa-scroll text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Misiones</span>
+                <span id="missions-dot" class="hidden absolute -top-1 -right-1 w-3 h-3 rounded-full bg-cyan-400 animate-pulse border border-white/50"></span>
+            </button>
+            <button onclick="switchTab('market')" id="tab-market" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <i class="fa-solid fa-scale-balanced text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Mercado</span>
+            </button>
+            <button onclick="switchTab('achievements')" id="tab-achievements" class="nav-tab flex flex-col items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <i class="fa-solid fa-trophy text-lg md:text-xl"></i>
+                <span class="text-[9px] mt-0.5 font-semibold">Logros</span>
+            </button>
+        </nav>
+
+        <main class="flex-1 relative overflow-hidden bg-slate-950">
+            <!-- CIUDAD -->
+            <section id="view-city" class="w-full h-full relative flex flex-col">
+
+                <!-- Controles superiores izquierda -->
+                <div class="absolute top-4 left-4 z-20 flex flex-wrap gap-2 bg-slate-900/90 p-2 rounded-2xl border border-slate-800 shadow-2xl backdrop-blur-md">
+                    <button onclick="openBuildMenu()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 px-4 py-2 rounded-xl font-bold text-sm shadow flex items-center gap-2">
+                        <i class="fa-solid fa-hammer"></i> Construir
+                    </button>
+                    <button onclick="collectAllResources()" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl font-semibold text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar"></i> Recolectar Todo
+                    </button>
+                </div>
+
+                <!-- Controles superiores derecha -->
+                <div class="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
+                    <div class="bg-slate-900/90 px-3 py-2 rounded-2xl border border-slate-800 shadow-xl backdrop-blur-md text-[10px] text-slate-400 max-w-[230px]">
+                        <i class="fa-solid fa-circle-info text-amber-400 mr-1"></i>
+                        Arrastra para desplazarte · Click en edificio para info/mejorar
+                    </div>
+                    <div class="bg-slate-900/90 px-2 py-2 rounded-2xl border border-slate-800 shadow-xl backdrop-blur-md flex items-center gap-1">
+                        <button onclick="zoomCity(-1)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 transition" title="Alejar">
+                            <i class="fa-solid fa-magnifying-glass-minus"></i>
+                        </button>
+                        <span id="zoom-label" class="text-[10px] text-slate-400 w-10 text-center font-bold">26px</span>
+                        <button onclick="zoomCity(1)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 transition" title="Acercar">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i>
+                        </button>
+                        <button onclick="centerCityView()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 transition" title="Centrar vista">
+                            <i class="fa-solid fa-crosshairs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lienzo desplazable -->
+                <div id="city-scroller" class="flex-1 overflow-auto bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+                    <div class="p-6 inline-block min-w-full">
+                        <div id="city-grid"></div>
+                    </div>
+                </div>
+
+                <!-- Barra inferior de estado -->
+                <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 px-4 py-1.5 rounded-full border border-slate-800 shadow-xl backdrop-blur-md text-[10px] text-slate-400 flex items-center gap-4 whitespace-nowrap">
+                    <span><i class="fa-solid fa-table-cells text-emerald-400 mr-1"></i>100 × 100 = <span class="text-emerald-300 font-bold">10.000</span> casillas</span>
+                    <span class="hidden sm:inline"><i class="fa-solid fa-location-crosshairs text-cyan-400 mr-1"></i>Pos: <span id="cell-coord" class="text-cyan-300 font-bold">—</span></span>
+                    <span><i class="fa-solid fa-building text-amber-400 mr-1"></i>Edificios: <span id="city-built-count" class="text-amber-300 font-bold">0</span></span>
+                </div>
+            </section>
+
+            <!-- TECNOLOGÍA -->
+            <section id="view-tech" class="w-full h-full hidden overflow-auto p-6">
+                <div class="max-w-6xl mx-auto space-y-8">
+                    <div class="border-b border-amber-900/40 pb-4 flex flex-wrap justify-between items-end gap-2">
+                        <div>
+                            <h2 class="font-cinzel text-2xl font-bold text-amber-400">Árbol de Tecnología</h2>
+                            <p class="text-slate-400 text-sm">Avanza desde la Edad de Bronce hasta la Edad de los Robots.</p>
+                        </div>
+                        <div class="text-xs text-slate-400">Investigadas: <span id="tech-progress" class="font-bold text-amber-300">0 / 0</span></div>
+                    </div>
+                    <div id="tech-tree-container" class="space-y-10 pb-8"></div>
+                </div>
+            </section>
+
+            <!-- MAPA -->
+            <section id="view-map" class="w-full h-full hidden p-6 overflow-auto">
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div class="border-b border-slate-800 pb-4 flex flex-wrap justify-between items-end gap-2">
+                        <div>
+                            <h2 class="font-cinzel text-2xl font-bold text-amber-400">Mapa de Continente</h2>
+                            <p class="text-slate-400 text-sm">Conquista territorios e imperios continentales.</p>
+                        </div>
+                        <div class="text-xs text-slate-400">Conquistadas: <span id="province-progress" class="font-bold text-emerald-300">0 / 0</span></div>
+                    </div>
+                    <div id="campaign-provinces-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+            </section>
+
+            <!-- BIENES -->
+            <section id="view-inventory" class="w-full h-full hidden p-6 overflow-auto">
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <h2 class="font-cinzel text-2xl font-bold text-amber-400">Almacén de Bienes</h2>
+                        <p class="text-slate-400 text-sm">Bienes acumulados para el desarrollo tecnológico e industrial.</p>
+                    </div>
+                    <div id="inventory-goods-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                </div>
+            </section>
+
+            <!-- EJÉRCITO -->
+            <section id="view-army" class="w-full h-full hidden p-6 overflow-auto">
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div class="border-b border-slate-800 pb-4">
+                        <h2 class="font-cinzel text-2xl font-bold text-amber-400">Ejército de la Ciudad</h2>
+                        <p class="text-slate-400 text-sm">Recluta tropas y asígnalas a un héroe para potenciar su poder.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                            <h3 class="text-lg font-bold text-amber-300 mb-3 flex items-center gap-2"><i class="fa-solid fa-user-shield"></i> Tropas Disponibles</h3>
+                            <div id="army-list" class="space-y-3"></div>
+                        </div>
+                        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-amber-300 mb-3">Estadísticas de Batalla</h3>
+                                <div class="space-y-3 text-sm text-slate-300">
+                                    <div class="flex justify-between p-3 bg-slate-950/80 rounded-xl border border-slate-800">
+                                        <span>Ataque base:</span><span id="army-base-atk" class="font-bold text-amber-400">0</span>
+                                    </div>
+                                    <div class="flex justify-between p-3 bg-slate-950/80 rounded-xl border border-slate-800">
+                                        <span>Defensa base:</span><span id="army-base-def" class="font-bold text-blue-400">0</span>
+                                    </div>
+                                    <div class="flex justify-between p-3 bg-slate-950/80 rounded-xl border border-slate-800">
+                                        <span>Bonus de héroes:</span><span id="army-hero-bonus" class="font-bold text-purple-400">+0%</span>
+                                    </div>
+                                    <div class="flex justify-between p-3 bg-gradient-to-r from-amber-900/40 to-pink-900/40 rounded-xl border border-amber-500/40">
+                                        <span class="font-bold">Poder total (con bonus):</span>
+                                        <span id="army-total-atk" class="font-black text-amber-300 text-lg">0</span>
+                                    </div>
+                                    <div class="flex justify-between p-3 bg-slate-950/80 rounded-xl border border-slate-800">
+                                        <span>Unidades totales:</span><span id="army-total-units" class="font-bold text-emerald-400">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HÉROES -->
+            <section id="view-heroes" class="w-full h-full hidden p-6 overflow-auto">
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div class="border-b border-slate-800 pb-4 flex flex-wrap justify-between items-end gap-2">
+                        <div>
+                            <h2 class="font-cinzel text-2xl font-bold text-purple-300 flex items-center gap-2"><i class="fa-solid fa-crown"></i> Héroes Legendarios</h2>
+                            <p class="text-slate-400 text-sm">Recluta héroes con <span class="text-cyan-300 font-bold">diamantes</span> para potenciar tu ejército.</p>
+                        </div>
+                        <div class="text-xs text-slate-400">Activos: <span id="heroes-active-count" class="font-bold text-purple-300">0</span></div>
+                    </div>
+                    <div id="heroes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                </div>
+            </section>
+
+            <!-- MARAVILLAS -->
+            <section id="view-wonders" class="w-full h-full hidden p-6 overflow-auto">
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div class="border-b border-slate-800 pb-4 flex flex-wrap justify-between items-end gap-2">
+                        <div>
+                            <h2 class="font-cinzel text-2xl font-bold text-amber-300 flex items-center gap-2"><i class="fa-solid fa-monument"></i> Maravillas del Mundo</h2>
+                            <p class="text-slate-400 text-sm">Construcciones únicas por era que otorgan bonificaciones permanentes.</p>
+                        </div>
+                        <div class="text-xs text-slate-400">Construidas: <span id="wonders-built-count" class="font-bold text-amber-300">0</span></div>
+                    </div>
+                    <div id="wonders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                </div>
+            </section>
+
+            <!-- MISIONES -->
+            <section id="view-missions" class="w-full h-full hidden p-6 overflow-auto">
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div class="border-b border-slate-800 pb-4 flex flex-wrap justify-between items-end gap-2">
+                        <div>
+                            <h2 class="font-cinzel text-2xl font-bold text-cyan-300 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> Misiones Diarias</h2>
+                            <p class="text-slate-400 text-sm">Completa objetivos para ganar <span class="text-amber-300 font-bold">monedas</span>, <span class="text-cyan-300 font-bold">diamantes</span> y <span class="text-yellow-300 font-bold">XP de Imperio</span>.</p>
+                        </div>
+                        <div class="text-xs text-slate-400">Completadas hoy: <span id="missions-claimed" class="font-bold text-cyan-300">0 / 0</span></div>
+                    </div>
+
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                        <div class="flex justify-between items-center flex-wrap gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="p-3 bg-gradient-to-br from-yellow-500/20 to-pink-500/20 rounded-2xl border border-yellow-500/40 text-yellow-300 text-2xl">
+                                    <i class="fa-solid fa-star"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs uppercase text-slate-400 font-bold">Nivel de Imperio</div>
+                                    <div class="text-xl font-cinzel font-black text-yellow-300">Nivel <span id="missions-level">1</span></div>
+                                    <div class="text-[11px] text-slate-400">Bonus producción: <span id="missions-prod-bonus" class="text-emerald-400 font-bold">+0%</span></div>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-[180px]">
+                                <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                    <span>Progreso</span>
+                                    <span id="missions-xp-label">0 / 100 XP</span>
+                                </div>
+                                <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                                    <div id="missions-xp-bar" class="h-full bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 transition-all duration-500" style="width:0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="missions-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+                    <div class="text-center pt-4">
+                        <button onclick="rerollMissions()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 px-6 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 mx-auto">
+                            <i class="fa-solid fa-rotate"></i> Renovar misiones (-2 💎)
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MERCADO -->
+            <section id="view-market" class="w-full h-full hidden p-6 overflow-auto">
+                <div class="max-w-6xl mx-auto space-y-6">
+                    <div class="border-b border-slate-800 pb-4 flex flex-wrap justify-between items-end gap-2">
+                        <div>
+                            <h2 class="font-cinzel text-2xl font-bold text-emerald-300 flex items-center gap-2"><i class="fa-solid fa-scale-balanced"></i> Mercado Global</h2>
+                            <p class="text-slate-400 text-sm">Compra y vende bienes con otros imperios. Las ofertas cambian con cada era.</p>
+                        </div>
+                        <button onclick="refreshMarket(true)" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition">
+                            <i class="fa-solid fa-arrows-rotate"></i> Renovar ofertas (-1 💎)
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="bg-slate-900 p-3 rounded-2xl border border-emerald-800/50 text-center">
+                            <div class="text-[10px] uppercase text-slate-400 font-bold">Ofertas activas</div>
+                            <div class="text-lg font-bold text-emerald-300" id="market-count">0</div>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-2xl border border-emerald-800/50 text-center">
+                            <div class="text-[10px] uppercase text-slate-400 font-bold">Comercios hoy</div>
+                            <div class="text-lg font-bold text-emerald-300" id="market-trades">0</div>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-2xl border border-emerald-800/50 text-center">
+                            <div class="text-[10px] uppercase text-slate-400 font-bold">Monedas</div>
+                            <div class="text-lg font-bold text-amber-300" id="market-coins">0</div>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-2xl border border-emerald-800/50 text-center">
+                            <div class="text-[10px] uppercase text-slate-400 font-bold">Diamantes</div>
+                            <div class="text-lg font-bold text-cyan-300" id="market-diamonds">0</div>
+                        </div>
+                    </div>
+
+                    <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                </div>
+            </section>
+
+            <!-- LOGROS -->
+            <section id="view-achievements" class="w-full h-full hidden p-6 overflow-auto">
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div class="border-b border-slate-800 pb-4 flex flex-wrap justify-between items-end gap-2">
+                        <div>
+                            <h2 class="font-cinzel text-2xl font-bold text-emerald-300 flex items-center gap-2"><i class="fa-solid fa-trophy"></i> Logros del Imperio</h2>
+                            <p class="text-slate-400 text-sm">Completa objetivos para ganar diamantes y recompensas.</p>
+                        </div>
+                        <div class="text-xs text-slate-400">Completados: <span id="achievements-progress" class="font-bold text-emerald-300">0 / 0</span></div>
+                    </div>
+                    <div id="achievements-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL CONSTRUCCIÓN -->
+    <div id="modal-build" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-amber-900/50 rounded-3xl max-w-4xl w-full max-h-[88vh] flex flex-col shadow-2xl">
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center flex-wrap gap-2">
+                <h3 class="font-cinzel text-xl font-bold text-amber-400">Menú de Construcción</h3>
+                <div class="flex items-center gap-3">
+                    <label class="text-xs text-slate-400 flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" id="filter-available" onchange="filterBuildCategory(currentBuildCategory, null)" class="accent-amber-500">
+                        Solo disponibles
+                    </label>
+                    <button onclick="closeBuildMenu()" class="text-slate-400 hover:text-white text-xl p-1"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="flex border-b border-slate-800 bg-slate-950/60 text-xs md:text-sm overflow-x-auto" id="big1">
+                <button onclick="filterBuildCategory('residential', this)" class="build-cat-btn active px-4 py-3 font-semibold text-amber-400 border-b-2 border-amber-500 whitespace-nowrap">Residencial</button>
+                <button onclick="filterBuildCategory('goods', this)" class="build-cat-btn px-4 py-3 font-semibold text-slate-400 hover:text-slate-200 whitespace-nowrap">Bienes</button>
+                <button onclick="filterBuildCategory('military', this)" class="build-cat-btn px-4 py-3 font-semibold text-slate-400 hover:text-slate-200 whitespace-nowrap">Militar</button>
+                <button onclick="filterBuildCategory('cultural', this)" class="build-cat-btn px-4 py-3 font-semibold text-slate-400 hover:text-slate-200 whitespace-nowrap">Cultural</button>
+            </div>
+            <div id="build-options-list" class="p-4 overflow-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1"></div>
+        </div>
+    </div>
+
+    <!-- MODAL INFO EDIFICIO -->
+    <div id="modal-info" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-amber-900/50 rounded-3xl max-w-md w-full shadow-2xl">
+            <div id="modal-info-content"></div>
+        </div>
+    </div>
+
+    <!-- TOASTS -->
+    <div id="toast-container" class="fixed top-20 right-4 z-[60] space-y-2 pointer-events-none"></div>
+
+    <script>
+        /* ==============================
+           CONSTANTES BÁSICAS
+           ============================== */
+        const ERAS = {
+            BRONZE:'Edad de Bronce', IRON:'Edad de Hierro', EARLY_MIDDLE:'Alta Edad Media',
+            FEUDAL:'Edad Feudal', CASTLES:'Edad de los Castillos', IMPERIAL:'Edad Imperial',
+            ENLIGHTENMENT:'Edad de la Ilustración', INDUSTRIAL:'Era Industrial',
+            ATOMIC:'Edad Atómica', INFORMATION:'Edad de la Información', ROBOTS:'Edad de los Robots'
+        };
+        const ERA_ORDER = Object.values(ERAS);
+
+        /* ============================================================
+           DIMENSIONES DEL TABLERO  (100 x 100 = 10.000 casillas)
+           ============================================================ */
+        const GRID_W = 100;
+        const GRID_H = 100;
+        const GRID_TOTAL = GRID_W * GRID_H;
+        const CENTER_X = Math.floor(GRID_W / 2);
+        const CENTER_Y = Math.floor(GRID_H / 2);
+        const CENTER_IDX = CENTER_Y * GRID_W + CENTER_X;
+
+        const GOODS = {
+            wood:{name:'Madera',icon:'fa-tree',era:ERAS.BRONZE},
+            stone:{name:'Piedra',icon:'fa-cubes',era:ERAS.BRONZE},
+            wine:{name:'Vino',icon:'fa-wine-glass-empty',era:ERAS.BRONZE},
+            copper:{name:'Cobre',icon:'fa-cube',era:ERAS.BRONZE},
+            limestone:{name:'Caliza',icon:'fa-mountain',era:ERAS.BRONZE},
+            iron:{name:'Hierro',icon:'fa-shield-cat',era:ERAS.IRON},
+            cloth:{name:'Tela',icon:'fa-scroll',era:ERAS.IRON},
+            ebony:{name:'Ébano',icon:'fa-tree-city',era:ERAS.IRON},
+            pottery:{name:'Cerámica',icon:'fa-jar',era:ERAS.IRON},
+            silk:{name:'Seda',icon:'fa-feather',era:ERAS.EARLY_MIDDLE},
+            honey:{name:'Miel',icon:'fa-droplet',era:ERAS.EARLY_MIDDLE},
+            glass:{name:'Vidrio Soplado',icon:'fa-wine-bottle',era:ERAS.FEUDAL},
+            herbs:{name:'Hierbas',icon:'fa-leaf',era:ERAS.FEUDAL},
+            wool:{name:'Lana',icon:'fa-cloud',era:ERAS.FEUDAL},
+            chainmail:{name:'Cota de Malla',icon:'fa-shield',era:ERAS.CASTLES},
+            tapestry:{name:'Tapiz',icon:'fa-rug',era:ERAS.CASTLES},
+            salt:{name:'Sal',icon:'fa-mortar-pestle',era:ERAS.CASTLES},
+            gunpowder:{name:'Pólvora Negra',icon:'fa-explosion',era:ERAS.IMPERIAL},
+            porcelain:{name:'Porcelana',icon:'fa-mug-hot',era:ERAS.IMPERIAL},
+            coffee:{name:'Café',icon:'fa-mug-saucer',era:ERAS.IMPERIAL},
+            paper:{name:'Papel Fino',icon:'fa-file-lines',era:ERAS.ENLIGHTENMENT},
+            ink:{name:'Tinta',icon:'fa-pen-nib',era:ERAS.ENLIGHTENMENT},
+            cotton:{name:'Algodón',icon:'fa-seedling',era:ERAS.ENLIGHTENMENT},
+            steel:{name:'Acero Industrial',icon:'fa-industry',era:ERAS.INDUSTRIAL},
+            coal:{name:'Carbón',icon:'fa-fire',era:ERAS.INDUSTRIAL},
+            cement:{name:'Cemento',icon:'fa-cubes-stacked',era:ERAS.INDUSTRIAL},
+            uranium:{name:'Uranio Enriquecido',icon:'fa-radiation',era:ERAS.ATOMIC},
+            aluminum:{name:'Aluminio',icon:'fa-weight-hanging',era:ERAS.ATOMIC},
+            petro:{name:'Petroquímicos',icon:'fa-oil-can',era:ERAS.ATOMIC},
+            semiconductors:{name:'Semiconductores',icon:'fa-microchip',era:ERAS.INFORMATION},
+            fiberoptics:{name:'Fibra Óptica',icon:'fa-wifi',era:ERAS.INFORMATION},
+            biotech:{name:'Biotecnología',icon:'fa-dna',era:ERAS.INFORMATION},
+            nanobots:{name:'Nanobots',icon:'fa-robot',era:ERAS.ROBOTS},
+            graphene:{name:'Grafeno',icon:'fa-layer-group',era:ERAS.ROBOTS},
+            fusion:{name:'Células de Fusión',icon:'fa-bolt-lightning',era:ERAS.ROBOTS}
+        };
+
+        /* ==============================
+           CATÁLOGO DE EDIFICIOS
+           ============================== */
+        const BUILDINGS_CATALOG = {
+            hut:{id:'hut',name:'Choza',type:'residential',era:ERAS.BRONZE,costCoins:50,popProvided:10,happinessCost:5,produces:'coins',yieldAmount:30,yieldInterval:10,icon:'fa-campground'},
+            longhouse:{id:'longhouse',name:'Casa Comunal',type:'residential',era:ERAS.BRONZE,costCoins:120,popProvided:22,happinessCost:10,produces:'coins',yieldAmount:70,yieldInterval:12,icon:'fa-warehouse'},
+            lumbermill:{id:'lumbermill',name:'Aserradero',type:'goods',era:ERAS.BRONZE,goodType:'wood',costCoins:150,popNeeded:8,produceCostCoins:40,yieldGoodAmount:5,yieldInterval:15,icon:'fa-tree'},
+            quarry:{id:'quarry',name:'Cantera de Piedra',type:'goods',era:ERAS.BRONZE,goodType:'stone',costCoins:180,popNeeded:8,produceCostCoins:45,yieldGoodAmount:5,yieldInterval:15,icon:'fa-cubes'},
+            winery:{id:'winery',name:'Bodega de Vino',type:'goods',era:ERAS.BRONZE,goodType:'wine',costCoins:200,popNeeded:10,produceCostCoins:50,yieldGoodAmount:5,yieldInterval:15,icon:'fa-wine-glass'},
+            copper_mine:{id:'copper_mine',name:'Mina de Cobre',type:'goods',era:ERAS.BRONZE,goodType:'copper',costCoins:220,reqGoodsToBuild:{stone:5},popNeeded:10,produceCostCoins:55,yieldGoodAmount:5,yieldInterval:16,icon:'fa-cube'},
+            limestone_quarry:{id:'limestone_quarry',name:'Cantera de Caliza',type:'goods',era:ERAS.BRONZE,goodType:'limestone',costCoins:240,reqGoodsToBuild:{wood:5},popNeeded:12,produceCostCoins:60,yieldGoodAmount:5,yieldInterval:16,icon:'fa-mountain'},
+            spear_barracks:{id:'spear_barracks',name:'Cuartel de Lanceros',type:'military',unitType:'spearman',era:ERAS.BRONZE,costCoins:120,popNeeded:8,icon:'fa-person-rifle'},
+            slinger_range:{id:'slinger_range',name:'Campo de Honderos',type:'military',unitType:'slinger',era:ERAS.BRONZE,costCoins:150,popNeeded:8,icon:'fa-bullseye'},
+            memorial:{id:'memorial',name:'Monumento de Piedra',type:'cultural',era:ERAS.BRONZE,costCoins:100,happinessProvided:40,icon:'fa-monument'},
+            totem:{id:'totem',name:'Tótem Ancestral',type:'cultural',era:ERAS.BRONZE,costCoins:180,happinessProvided:70,icon:'fa-place-of-worship'},
+
+            house:{id:'house',name:'Casa de Teja',type:'residential',era:ERAS.IRON,costCoins:180,popProvided:25,happinessCost:15,produces:'coins',yieldAmount:90,yieldInterval:15,icon:'fa-house-chimney'},
+            villa:{id:'villa',name:'Villa Romana',type:'residential',era:ERAS.IRON,costCoins:320,popProvided:45,happinessCost:25,produces:'coins',yieldAmount:160,yieldInterval:17,icon:'fa-house-flag'},
+            iron_foundry:{id:'iron_foundry',name:'Fundición de Hierro',type:'goods',era:ERAS.IRON,goodType:'iron',costCoins:350,reqGoodsToBuild:{wood:5,stone:5},popNeeded:15,produceCostCoins:80,reqGoodsToProduce:{wood:2},yieldGoodAmount:5,yieldInterval:20,icon:'fa-fire-burner'},
+            weaver:{id:'weaver',name:'Tejeduría de Tela',type:'goods',era:ERAS.IRON,goodType:'cloth',costCoins:350,reqGoodsToBuild:{wine:5},popNeeded:15,produceCostCoins:80,reqGoodsToProduce:{wine:2},yieldGoodAmount:5,yieldInterval:20,icon:'fa-scroll'},
+            ebony_workshop:{id:'ebony_workshop',name:'Taller de Ébano',type:'goods',era:ERAS.IRON,goodType:'ebony',costCoins:380,reqGoodsToBuild:{wood:10},popNeeded:15,produceCostCoins:85,yieldGoodAmount:5,yieldInterval:20,icon:'fa-tree-city'},
+            pottery_kiln:{id:'pottery_kiln',name:'Horno de Cerámica',type:'goods',era:ERAS.IRON,goodType:'pottery',costCoins:400,reqGoodsToBuild:{limestone:8},popNeeded:15,produceCostCoins:90,reqGoodsToProduce:{limestone:2},yieldGoodAmount:5,yieldInterval:20,icon:'fa-jar'},
+            soldier_barracks:{id:'soldier_barracks',name:'Cuartel de Soldados',type:'military',unitType:'soldier',era:ERAS.IRON,costCoins:300,reqGoodsToBuild:{iron:5},popNeeded:15,icon:'fa-user-shield'},
+            archer_range:{id:'archer_range',name:'Campo de Arqueros',type:'military',unitType:'archer',era:ERAS.IRON,costCoins:350,reqGoodsToBuild:{cloth:5},popNeeded:15,icon:'fa-crosshairs'},
+            tavern:{id:'tavern',name:'Taberna',type:'cultural',era:ERAS.IRON,costCoins:300,happinessProvided:120,icon:'fa-beer-mug-empty'},
+            amphitheater:{id:'amphitheater',name:'Anfiteatro',type:'cultural',era:ERAS.IRON,costCoins:500,happinessProvided:200,icon:'fa-masks-theater'},
+
+            manor:{id:'manor',name:'Solar Feudal',type:'residential',era:ERAS.EARLY_MIDDLE,costCoins:400,popProvided:50,happinessCost:30,produces:'coins',yieldAmount:220,yieldInterval:20,icon:'fa-building-columns'},
+            farmstead:{id:'farmstead',name:'Granja Señorial',type:'residential',era:ERAS.EARLY_MIDDLE,costCoins:600,popProvided:75,happinessCost:40,produces:'coins',yieldAmount:320,yieldInterval:22,icon:'fa-tractor'},
+            silk_farm:{id:'silk_farm',name:'Granja de Seda',type:'goods',era:ERAS.EARLY_MIDDLE,goodType:'silk',costCoins:700,reqGoodsToBuild:{ebony:8},popNeeded:20,produceCostCoins:160,yieldGoodAmount:5,yieldInterval:25,icon:'fa-feather'},
+            apiary:{id:'apiary',name:'Colmenar',type:'goods',era:ERAS.EARLY_MIDDLE,goodType:'honey',costCoins:720,reqGoodsToBuild:{pottery:8},popNeeded:20,produceCostCoins:165,reqGoodsToProduce:{wine:2},yieldGoodAmount:5,yieldInterval:25,icon:'fa-droplet'},
+            knight_stables:{id:'knight_stables',name:'Establo de Caballeros',type:'military',unitType:'knight',era:ERAS.EARLY_MIDDLE,costCoins:600,reqGoodsToBuild:{iron:10,cloth:10},popNeeded:25,icon:'fa-horse-head'},
+            pikeman_barracks:{id:'pikeman_barracks',name:'Cuartel de Piqueros',type:'military',unitType:'pikeman',era:ERAS.EARLY_MIDDLE,costCoins:650,reqGoodsToBuild:{iron:8,ebony:5},popNeeded:25,icon:'fa-person-military-rifle'},
+            monastery:{id:'monastery',name:'Monasterio',type:'cultural',era:ERAS.EARLY_MIDDLE,costCoins:800,happinessProvided:300,icon:'fa-cross'},
+            fairground:{id:'fairground',name:'Plaza de Ferias',type:'cultural',era:ERAS.EARLY_MIDDLE,costCoins:1000,happinessProvided:450,icon:'fa-tents'},
+
+            feudal_manor:{id:'feudal_manor',name:'Feudo Dominical',type:'residential',era:ERAS.FEUDAL,costCoins:800,popProvided:100,happinessCost:50,produces:'coins',yieldAmount:500,yieldInterval:25,icon:'fa-synagogue'},
+            burgher_house:{id:'burgher_house',name:'Casa Burguesa',type:'residential',era:ERAS.FEUDAL,costCoins:1100,popProvided:140,happinessCost:65,produces:'coins',yieldAmount:680,yieldInterval:27,icon:'fa-hotel'},
+            glassworks:{id:'glassworks',name:'Taller de Cristal',type:'goods',era:ERAS.FEUDAL,goodType:'glass',costCoins:600,reqGoodsToBuild:{iron:10},popNeeded:20,produceCostCoins:150,yieldGoodAmount:5,yieldInterval:25,icon:'fa-wine-bottle'},
+            herb_garden:{id:'herb_garden',name:'Jardín de Hierbas',type:'goods',era:ERAS.FEUDAL,goodType:'herbs',costCoins:650,reqGoodsToBuild:{pottery:10},popNeeded:22,produceCostCoins:155,yieldGoodAmount:5,yieldInterval:26,icon:'fa-leaf'},
+            wool_mill:{id:'wool_mill',name:'Telar de Lana',type:'goods',era:ERAS.FEUDAL,goodType:'wool',costCoins:700,reqGoodsToBuild:{cloth:10},popNeeded:22,produceCostCoins:160,reqGoodsToProduce:{cloth:2},yieldGoodAmount:5,yieldInterval:26,icon:'fa-cloud'},
+            crossbow_barracks:{id:'crossbow_barracks',name:'Garrison de Arbalesteros',type:'military',unitType:'crossbowman',era:ERAS.FEUDAL,costCoins:1000,reqGoodsToBuild:{glass:10},popNeeded:35,icon:'fa-crosshairs'},
+            mace_barracks:{id:'mace_barracks',name:'Cuartel de Mazas',type:'military',unitType:'maceman',era:ERAS.FEUDAL,costCoins:1100,reqGoodsToBuild:{silk:8},popNeeded:35,icon:'fa-gavel'},
+            cathedral:{id:'cathedral',name:'Catedral de la Ciudad',type:'cultural',era:ERAS.FEUDAL,costCoins:1000,happinessProvided:400,icon:'fa-church'},
+            tournament_grounds:{id:'tournament_grounds',name:'Campo de Torneos',type:'cultural',era:ERAS.FEUDAL,costCoins:1400,happinessProvided:600,icon:'fa-flag-checkered'},
+
+            castle_keep:{id:'castle_keep',name:'Alcázar Urbano',type:'residential',era:ERAS.CASTLES,costCoins:1500,popProvided:200,happinessCost:90,produces:'coins',yieldAmount:1100,yieldInterval:30,icon:'fa-chess-rook'},
+            stone_tower_house:{id:'stone_tower_house',name:'Torre Residencial',type:'residential',era:ERAS.CASTLES,costCoins:2000,popProvided:280,happinessCost:120,produces:'coins',yieldAmount:1500,yieldInterval:32,icon:'fa-building-shield'},
+            armory:{id:'armory',name:'Armería de Cota de Malla',type:'goods',era:ERAS.CASTLES,goodType:'chainmail',costCoins:1200,reqGoodsToBuild:{iron:15,glass:10},popNeeded:30,produceCostCoins:250,yieldGoodAmount:5,yieldInterval:30,icon:'fa-shield'},
+            tapestry_workshop:{id:'tapestry_workshop',name:'Taller de Tapices',type:'goods',era:ERAS.CASTLES,goodType:'tapestry',costCoins:1300,reqGoodsToBuild:{wool:12},popNeeded:30,produceCostCoins:260,reqGoodsToProduce:{wool:3},yieldGoodAmount:5,yieldInterval:30,icon:'fa-rug'},
+            salt_mine:{id:'salt_mine',name:'Mina de Sal',type:'goods',era:ERAS.CASTLES,goodType:'salt',costCoins:1350,reqGoodsToBuild:{limestone:20},popNeeded:32,produceCostCoins:270,yieldGoodAmount:5,yieldInterval:30,icon:'fa-mortar-pestle'},
+            heavy_knight_stables:{id:'heavy_knight_stables',name:'Cuartel de Caballería Pesada',type:'military',unitType:'templar',era:ERAS.CASTLES,costCoins:2000,reqGoodsToBuild:{chainmail:10},popNeeded:50,icon:'fa-chess-knight'},
+            longbow_range:{id:'longbow_range',name:'Campo de Arcos Largos',type:'military',unitType:'longbowman',era:ERAS.CASTLES,costCoins:2200,reqGoodsToBuild:{tapestry:8},popNeeded:50,icon:'fa-bullseye'},
+            castle:{id:'castle',name:'Castillo Feudal',type:'cultural',era:ERAS.CASTLES,costCoins:2500,happinessProvided:900,icon:'fa-dungeon'},
+            jousting_arena:{id:'jousting_arena',name:'Arena de Justas',type:'cultural',era:ERAS.CASTLES,costCoins:3200,happinessProvided:1300,icon:'fa-flag'},
+
+            imperial_palace:{id:'imperial_palace',name:'Palacio Imperial',type:'residential',era:ERAS.IMPERIAL,costCoins:3000,popProvided:400,happinessCost:150,produces:'coins',yieldAmount:2500,yieldInterval:35,icon:'fa-crown'},
+            baroque_mansion:{id:'baroque_mansion',name:'Mansión Barroca',type:'residential',era:ERAS.IMPERIAL,costCoins:4200,popProvided:560,happinessCost:200,produces:'coins',yieldAmount:3200,yieldInterval:37,icon:'fa-landmark-dome'},
+            gunpowder_mill:{id:'gunpowder_mill',name:'Taller de Pólvora',type:'goods',era:ERAS.IMPERIAL,goodType:'gunpowder',costCoins:2500,reqGoodsToBuild:{chainmail:10},popNeeded:45,produceCostCoins:400,yieldGoodAmount:5,yieldInterval:35,icon:'fa-explosion'},
+            porcelain_kiln:{id:'porcelain_kiln',name:'Horno de Porcelana',type:'goods',era:ERAS.IMPERIAL,goodType:'porcelain',costCoins:2700,reqGoodsToBuild:{glass:15,salt:10},popNeeded:45,produceCostCoins:420,yieldGoodAmount:5,yieldInterval:35,icon:'fa-mug-hot'},
+            coffee_plantation:{id:'coffee_plantation',name:'Plantación de Café',type:'goods',era:ERAS.IMPERIAL,goodType:'coffee',costCoins:2900,reqGoodsToBuild:{honey:15},popNeeded:48,produceCostCoins:440,yieldGoodAmount:5,yieldInterval:36,icon:'fa-mug-saucer'},
+            cannon_foundry:{id:'cannon_foundry',name:'Fundición de Cañones',type:'military',unitType:'cannon',era:ERAS.IMPERIAL,costCoins:4000,reqGoodsToBuild:{gunpowder:10},popNeeded:70,icon:'fa-skull-crossbones'},
+            musket_barracks:{id:'musket_barracks',name:'Cuartel de Mosqueteros',type:'military',unitType:'musketeer',era:ERAS.IMPERIAL,costCoins:4300,reqGoodsToBuild:{salt:10},popNeeded:70,icon:'fa-person-military-rifle'},
+            enlightenment_cathedral:{id:'enlightenment_cathedral',name:'Catedral Imperial',type:'cultural',era:ERAS.IMPERIAL,costCoins:5000,happinessProvided:2000,icon:'fa-landmark-dome'},
+            opera_house:{id:'opera_house',name:'Casa de la Ópera',type:'cultural',era:ERAS.IMPERIAL,costCoins:6500,happinessProvided:2800,icon:'fa-masks-theater'},
+
+            enlightened_mansion:{id:'enlightened_mansion',name:'Mansión Ilustrada',type:'residential',era:ERAS.ENLIGHTENMENT,costCoins:6000,popProvided:800,happinessCost:250,produces:'coins',yieldAmount:3800,yieldInterval:40,icon:'fa-landmark'},
+            georgian_townhouse:{id:'georgian_townhouse',name:'Casa Georgiana',type:'residential',era:ERAS.ENLIGHTENMENT,costCoins:8500,popProvided:1100,happinessCost:330,produces:'coins',yieldAmount:5000,yieldInterval:42,icon:'fa-house-chimney-user'},
+            paper_mill:{id:'paper_mill',name:'Taller de Papel Fino',type:'goods',era:ERAS.ENLIGHTENMENT,goodType:'paper',costCoins:5000,reqGoodsToBuild:{gunpowder:10},popNeeded:60,produceCostCoins:600,yieldGoodAmount:5,yieldInterval:40,icon:'fa-file-lines'},
+            ink_workshop:{id:'ink_workshop',name:'Taller de Tinta',type:'goods',era:ERAS.ENLIGHTENMENT,goodType:'ink',costCoins:5200,reqGoodsToBuild:{porcelain:12},popNeeded:60,produceCostCoins:620,yieldGoodAmount:5,yieldInterval:40,icon:'fa-pen-nib'},
+            cotton_plantation:{id:'cotton_plantation',name:'Plantación de Algodón',type:'goods',era:ERAS.ENLIGHTENMENT,goodType:'cotton',costCoins:5400,reqGoodsToBuild:{coffee:12},popNeeded:62,produceCostCoins:640,yieldGoodAmount:5,yieldInterval:41,icon:'fa-seedling'},
+            rifle_barracks:{id:'rifle_barracks',name:'Cuartel de Fusileros',type:'military',unitType:'rifleman',era:ERAS.ENLIGHTENMENT,costCoins:8000,reqGoodsToBuild:{paper:10},popNeeded:90,icon:'fa-person-military-rifle'},
+            grenadier_barracks:{id:'grenadier_barracks',name:'Cuartel de Granaderos',type:'military',unitType:'grenadier',era:ERAS.ENLIGHTENMENT,costCoins:8500,reqGoodsToBuild:{ink:10},popNeeded:92,icon:'fa-bomb'},
+            science_academy:{id:'science_academy',name:'Academia de Ciencias',type:'cultural',era:ERAS.ENLIGHTENMENT,costCoins:9000,happinessProvided:3500,icon:'fa-graduation-cap'},
+            museum:{id:'museum',name:'Museo Nacional',type:'cultural',era:ERAS.ENLIGHTENMENT,costCoins:11500,happinessProvided:4800,icon:'fa-building-columns'},
+
+            victorian_house:{id:'victorian_house',name:'Casa Victoriana',type:'residential',era:ERAS.INDUSTRIAL,costCoins:12000,popProvided:1500,happinessCost:400,produces:'coins',yieldAmount:6000,yieldInterval:45,icon:'fa-city'},
+            tenement_block:{id:'tenement_block',name:'Bloque de Viviendas',type:'residential',era:ERAS.INDUSTRIAL,costCoins:17000,popProvided:2100,happinessCost:520,produces:'coins',yieldAmount:8000,yieldInterval:47,icon:'fa-building'},
+            steel_mill:{id:'steel_mill',name:'Alto Horno de Acero',type:'goods',era:ERAS.INDUSTRIAL,goodType:'steel',costCoins:10000,reqGoodsToBuild:{paper:15},popNeeded:100,produceCostCoins:1000,yieldGoodAmount:5,yieldInterval:45,icon:'fa-industry'},
+            coal_mine:{id:'coal_mine',name:'Mina de Carbón',type:'goods',era:ERAS.INDUSTRIAL,goodType:'coal',costCoins:10500,reqGoodsToBuild:{ink:12},popNeeded:100,produceCostCoins:1050,yieldGoodAmount:5,yieldInterval:45,icon:'fa-fire'},
+            cement_plant:{id:'cement_plant',name:'Planta de Cemento',type:'goods',era:ERAS.INDUSTRIAL,goodType:'cement',costCoins:11000,reqGoodsToBuild:{cotton:12},popNeeded:105,produceCostCoins:1100,reqGoodsToProduce:{limestone:3},yieldGoodAmount:5,yieldInterval:46,icon:'fa-cubes-stacked'},
+            heavy_artillery_factory:{id:'heavy_artillery_factory',name:'Factoría de Artillería Pesada',type:'military',unitType:'howitzer',era:ERAS.INDUSTRIAL,costCoins:15000,reqGoodsToBuild:{steel:10},popNeeded:130,icon:'fa-jet-fighter'},
+            steam_tank_factory:{id:'steam_tank_factory',name:'Fábrica de Tanques a Vapor',type:'military',unitType:'steam_tank',era:ERAS.INDUSTRIAL,costCoins:22000,reqGoodsToBuild:{steel:15},popNeeded:160,icon:'fa-truck-monster'},
+            gatling_factory:{id:'gatling_factory',name:'Fábrica de Ametralladoras',type:'military',unitType:'gatling',era:ERAS.INDUSTRIAL,costCoins:18000,reqGoodsToBuild:{coal:12},popNeeded:140,icon:'fa-bolt'},
+            central_station:{id:'central_station',name:'Estación de Ferrocarril Central',type:'cultural',era:ERAS.INDUSTRIAL,costCoins:18000,happinessProvided:7000,icon:'fa-train'},
+            world_exhibition:{id:'world_exhibition',name:'Exposición Universal',type:'cultural',era:ERAS.INDUSTRIAL,costCoins:23000,happinessProvided:9500,icon:'fa-earth-americas'},
+
+            atomic_bunker:{id:'atomic_bunker',name:'Búnker Atómico Subterráneo',type:'residential',era:ERAS.ATOMIC,costCoins:25000,popProvided:3000,happinessCost:700,produces:'coins',yieldAmount:12000,yieldInterval:50,icon:'fa-house-laptop'},
+            suburban_complex:{id:'suburban_complex',name:'Complejo Suburbano',type:'residential',era:ERAS.ATOMIC,costCoins:34000,popProvided:4200,happinessCost:900,produces:'coins',yieldAmount:16000,yieldInterval:52,icon:'fa-house-chimney-window'},
+            uranium_plant:{id:'uranium_plant',name:'Planta de Enriquecimiento de Uranio',type:'goods',era:ERAS.ATOMIC,goodType:'uranium',costCoins:20000,reqGoodsToBuild:{steel:20},popNeeded:150,produceCostCoins:2000,yieldGoodAmount:5,yieldInterval:50,icon:'fa-radiation'},
+            aluminum_smelter:{id:'aluminum_smelter',name:'Fundición de Aluminio',type:'goods',era:ERAS.ATOMIC,goodType:'aluminum',costCoins:21000,reqGoodsToBuild:{cement:15},popNeeded:150,produceCostCoins:2100,yieldGoodAmount:5,yieldInterval:50,icon:'fa-weight-hanging'},
+            oil_refinery:{id:'oil_refinery',name:'Refinería Petroquímica',type:'goods',era:ERAS.ATOMIC,goodType:'petro',costCoins:22000,reqGoodsToBuild:{coal:20},popNeeded:155,produceCostCoins:2200,yieldGoodAmount:5,yieldInterval:51,icon:'fa-oil-can'},
+            nuclear_missile_silo:{id:'nuclear_missile_silo',name:'Silo de Misiles Nucleares',type:'military',unitType:'atomic_soldier',era:ERAS.ATOMIC,costCoins:35000,reqGoodsToBuild:{uranium:15},popNeeded:200,icon:'fa-radiation'},
+            helicopter_base:{id:'helicopter_base',name:'Base de Helicópteros',type:'military',unitType:'helicopter',era:ERAS.ATOMIC,costCoins:38000,reqGoodsToBuild:{aluminum:15},popNeeded:210,icon:'fa-helicopter'},
+            atomic_monument:{id:'atomic_monument',name:'Monumento Atómico',type:'cultural',era:ERAS.ATOMIC,costCoins:35000,happinessProvided:15000,icon:'fa-atom'},
+            television_tower:{id:'television_tower',name:'Torre de Televisión',type:'cultural',era:ERAS.ATOMIC,costCoins:44000,happinessProvided:20000,icon:'fa-tower-broadcast'},
+
+            cyber_apartment:{id:'cyber_apartment',name:'Torre Cibernética',type:'residential',era:ERAS.INFORMATION,costCoins:50000,popProvided:6000,happinessCost:1200,produces:'coins',yieldAmount:25000,yieldInterval:55,icon:'fa-tower-observation'},
+            smart_tower:{id:'smart_tower',name:'Torre Inteligente',type:'residential',era:ERAS.INFORMATION,costCoins:68000,popProvided:8400,happinessCost:1500,produces:'coins',yieldAmount:33000,yieldInterval:57,icon:'fa-building-circle-check'},
+            semi_factory:{id:'semi_factory',name:'Fábrica de Semiconductores',type:'goods',era:ERAS.INFORMATION,goodType:'semiconductors',costCoins:40000,reqGoodsToBuild:{uranium:15},popNeeded:220,produceCostCoins:4000,yieldGoodAmount:5,yieldInterval:55,icon:'fa-microchip'},
+            fiber_lab:{id:'fiber_lab',name:'Laboratorio de Fibra Óptica',type:'goods',era:ERAS.INFORMATION,goodType:'fiberoptics',costCoins:42000,reqGoodsToBuild:{aluminum:18},popNeeded:225,produceCostCoins:4200,yieldGoodAmount:5,yieldInterval:55,icon:'fa-wifi'},
+            biotech_lab:{id:'biotech_lab',name:'Laboratorio Biotecnológico',type:'goods',era:ERAS.INFORMATION,goodType:'biotech',costCoins:44000,reqGoodsToBuild:{petro:18},popNeeded:230,produceCostCoins:4400,yieldGoodAmount:5,yieldInterval:56,icon:'fa-dna'},
+            drone_base:{id:'drone_base',name:'Base de Drones de Combate',type:'military',unitType:'drone',era:ERAS.INFORMATION,costCoins:60000,reqGoodsToBuild:{semiconductors:20},popNeeded:280,icon:'fa-jet-fighter-up'},
+            mech_infantry_base:{id:'mech_infantry_base',name:'Base de Infantería Mecanizada',type:'military',unitType:'mech_soldier',era:ERAS.INFORMATION,costCoins:66000,reqGoodsToBuild:{fiberoptics:20},popNeeded:290,icon:'fa-robot'},
+            holo_park:{id:'holo_park',name:'Parque Holográfico',type:'cultural',era:ERAS.INFORMATION,costCoins:70000,happinessProvided:32000,icon:'fa-vr-cardboard'},
+            stadium_online:{id:'stadium_online',name:'Estadio Virtual',type:'cultural',era:ERAS.INFORMATION,costCoins:86000,happinessProvided:42000,icon:'fa-futbol'},
+
+            robot_domicle:{id:'robot_domicle',name:'Arcosfera de Robótica',type:'residential',era:ERAS.ROBOTS,costCoins:100000,popProvided:12000,happinessCost:2000,produces:'coins',yieldAmount:50000,yieldInterval:60,icon:'fa-satellite'},
+            orbital_habitat:{id:'orbital_habitat',name:'Hábitat Orbital',type:'residential',era:ERAS.ROBOTS,costCoins:135000,popProvided:16500,happinessCost:2600,produces:'coins',yieldAmount:66000,yieldInterval:62,icon:'fa-satellite-dish'},
+            nanobot_lab:{id:'nanobot_lab',name:'Laboratorio de Nanobots',type:'goods',era:ERAS.ROBOTS,goodType:'nanobots',costCoins:80000,reqGoodsToBuild:{semiconductors:20},popNeeded:300,produceCostCoins:8000,yieldGoodAmount:5,yieldInterval:60,icon:'fa-robot'},
+            graphene_forge:{id:'graphene_forge',name:'Forja de Grafeno',type:'goods',era:ERAS.ROBOTS,goodType:'graphene',costCoins:84000,reqGoodsToBuild:{fiberoptics:20},popNeeded:305,produceCostCoins:8400,yieldGoodAmount:5,yieldInterval:60,icon:'fa-layer-group'},
+            fusion_plant:{id:'fusion_plant',name:'Planta de Fusión',type:'goods',era:ERAS.ROBOTS,goodType:'fusion',costCoins:88000,reqGoodsToBuild:{biotech:20},popNeeded:310,produceCostCoins:8800,yieldGoodAmount:5,yieldInterval:61,icon:'fa-bolt-lightning'},
+            cyborg_factory:{id:'cyborg_factory',name:'Planta de Ensamblaje de Cyborgs',type:'military',unitType:'cyborg_soldier',era:ERAS.ROBOTS,costCoins:120000,reqGoodsToBuild:{nanobots:25},popNeeded:400,icon:'fa-user-robot'},
+            titan_factory:{id:'titan_factory',name:'Fábrica de Titanes Mecánicos',type:'military',unitType:'titan_mech',era:ERAS.ROBOTS,costCoins:140000,reqGoodsToBuild:{graphene:25},popNeeded:420,icon:'fa-robot'},
+            ai_core:{id:'ai_core',name:'Núcleo Central de IA',type:'cultural',era:ERAS.ROBOTS,costCoins:150000,happinessProvided:70000,icon:'fa-network-wired'},
+            virtual_world:{id:'virtual_world',name:'Mundo Virtual',type:'cultural',era:ERAS.ROBOTS,costCoins:185000,happinessProvided:92000,icon:'fa-globe'}
+        };
+
+        /* UNIDADES */
+        const UNITS = {
+            spearman:{name:'Lancero',atk:6,def:6,costCoins:30,icon:'fa-person-rays',era:ERAS.BRONZE,unlockBuilding:'spear_barracks'},
+            slinger:{name:'Hondero',atk:8,def:4,costCoins:40,icon:'fa-bullseye',era:ERAS.BRONZE,unlockBuilding:'slinger_range'},
+            soldier:{name:'Soldado con Espada',atk:14,def:12,costCoins:90,reqGoodsToTrain:{iron:1},icon:'fa-user-ninja',era:ERAS.IRON,unlockBuilding:'soldier_barracks'},
+            archer:{name:'Arquero',atk:18,def:8,costCoins:110,reqGoodsToTrain:{cloth:1},icon:'fa-crosshairs',era:ERAS.IRON,unlockBuilding:'archer_range'},
+            knight:{name:'Caballero Pesado',atk:26,def:22,costCoins:200,reqGoodsToTrain:{iron:3,cloth:2},icon:'fa-horse',era:ERAS.EARLY_MIDDLE,unlockBuilding:'knight_stables'},
+            pikeman:{name:'Piquero',atk:22,def:30,costCoins:220,reqGoodsToTrain:{iron:2},icon:'fa-person-military-rifle',era:ERAS.EARLY_MIDDLE,unlockBuilding:'pikeman_barracks'},
+            crossbowman:{name:'Arbalestero',atk:40,def:30,costCoins:450,reqGoodsToTrain:{glass:2},icon:'fa-crosshairs',era:ERAS.FEUDAL,unlockBuilding:'crossbow_barracks'},
+            maceman:{name:'Maza Pesada',atk:45,def:42,costCoins:500,reqGoodsToTrain:{silk:2},icon:'fa-gavel',era:ERAS.FEUDAL,unlockBuilding:'mace_barracks'},
+            templar:{name:'Caballero Templario',atk:65,def:60,costCoins:900,reqGoodsToTrain:{chainmail:3},icon:'fa-shield-halved',era:ERAS.CASTLES,unlockBuilding:'heavy_knight_stables'},
+            longbowman:{name:'Arquero de Arco Largo',atk:75,def:45,costCoins:950,reqGoodsToTrain:{tapestry:2},icon:'fa-bullseye',era:ERAS.CASTLES,unlockBuilding:'longbow_range'},
+            cannon:{name:'Artillería con Cañón',atk:100,def:80,costCoins:1800,reqGoodsToTrain:{gunpowder:3},icon:'fa-bomb',era:ERAS.IMPERIAL,unlockBuilding:'cannon_foundry'},
+            musketeer:{name:'Mosquetero',atk:120,def:90,costCoins:2000,reqGoodsToTrain:{salt:2},icon:'fa-person-military-rifle',era:ERAS.IMPERIAL,unlockBuilding:'musket_barracks'},
+            rifleman:{name:'Fusilero con Bayoneta',atk:150,def:120,costCoins:3000,reqGoodsToTrain:{paper:3},icon:'fa-person-military-rifle',era:ERAS.ENLIGHTENMENT,unlockBuilding:'rifle_barracks'},
+            grenadier:{name:'Granadero',atk:180,def:130,costCoins:3400,reqGoodsToTrain:{ink:2},icon:'fa-bomb',era:ERAS.ENLIGHTENMENT,unlockBuilding:'grenadier_barracks'},
+            howitzer:{name:'Obús Industrial',atk:240,def:200,costCoins:5000,reqGoodsToTrain:{steel:3},icon:'fa-ring',era:ERAS.INDUSTRIAL,unlockBuilding:'heavy_artillery_factory'},
+            gatling:{name:'Ametralladora Gatling',atk:280,def:180,costCoins:6500,reqGoodsToTrain:{coal:3},icon:'fa-bolt',era:ERAS.INDUSTRIAL,unlockBuilding:'gatling_factory'},
+            steam_tank:{name:'Tanque de Vapor',atk:350,def:320,costCoins:8500,reqGoodsToTrain:{steel:5},icon:'fa-tank',era:ERAS.INDUSTRIAL,unlockBuilding:'steam_tank_factory'},
+            atomic_soldier:{name:'Infantería Atómica',atk:520,def:480,costCoins:14000,reqGoodsToTrain:{uranium:4},icon:'fa-biohazard',era:ERAS.ATOMIC,unlockBuilding:'nuclear_missile_silo'},
+            helicopter:{name:'Helicóptero de Combate',atk:600,def:450,costCoins:17000,reqGoodsToTrain:{aluminum:4},icon:'fa-helicopter',era:ERAS.ATOMIC,unlockBuilding:'helicopter_base'},
+            drone:{name:'Enjambre de Drones',atk:750,def:700,costCoins:24000,reqGoodsToTrain:{semiconductors:5},icon:'fa-plane',era:ERAS.INFORMATION,unlockBuilding:'drone_base'},
+            mech_soldier:{name:'Infantería Mecanizada',atk:880,def:820,costCoins:28000,reqGoodsToTrain:{fiberoptics:4},icon:'fa-robot',era:ERAS.INFORMATION,unlockBuilding:'mech_infantry_base'},
+            cyborg_soldier:{name:'Soldado Cyborg T-1000',atk:1100,def:1000,costCoins:45000,reqGoodsToTrain:{nanobots:5},icon:'fa-user-robot',era:ERAS.ROBOTS,unlockBuilding:'cyborg_factory'},
+            titan_mech:{name:'Titán Mecánico',atk:1400,def:1300,costCoins:60000,reqGoodsToTrain:{graphene:5},icon:'fa-robot',era:ERAS.ROBOTS,unlockBuilding:'titan_factory'}
+        };
+
+        /* ÁRBOL TECNOLÓGICO */
+        const TECH_TREE = [
+            {id:'tech_spearmen',name:'Lanzas y Hondas',era:ERAS.BRONZE,reqCoins:200,reqGoods:{},unlocks:['spear_barracks','slinger_range'],prereqs:[]},
+            {id:'tech_craftsmanship',name:'Carpintería y Fundición de Cobre',era:ERAS.BRONZE,reqCoins:350,reqGoods:{},unlocks:['lumbermill','copper_mine'],prereqs:['tech_spearmen']},
+            {id:'tech_stonecutting',name:'Corte de Piedra y Viticultura',era:ERAS.BRONZE,reqCoins:500,reqGoods:{wood:5},unlocks:['quarry','winery','limestone_quarry'],prereqs:['tech_craftsmanship']},
+            {id:'tech_bronze_culture',name:'Cultura y Monumentos de Bronce',era:ERAS.BRONZE,reqCoins:700,reqGoods:{stone:8,copper:3},unlocks:['totem','longhouse'],prereqs:['tech_stonecutting']},
+            {id:'tech_iron_age_transition',name:'Fundición de Hierro (Paso a Edad de Hierro)',era:ERAS.IRON,reqCoins:1000,reqGoods:{wood:10,stone:10,wine:10,copper:8},reqUnits:{spearman:4},unlocks:['house','villa','iron_foundry','weaver','ebony_workshop','pottery_kiln','soldier_barracks','archer_range','tavern'],prereqs:['tech_bronze_culture']},
+            {id:'tech_iron_culture',name:'Anfiteatros y Cultura de Hierro',era:ERAS.IRON,reqCoins:1600,reqGoods:{iron:8,pottery:6},unlocks:['amphitheater'],prereqs:['tech_iron_age_transition']},
+            {id:'tech_early_middle_transition',name:'Caballería y Feudalismo (Alta Edad Media)',era:ERAS.EARLY_MIDDLE,reqCoins:2500,reqGoods:{iron:15,cloth:15,ebony:10},reqUnits:{soldier:4},unlocks:['manor','farmstead','silk_farm','apiary','knight_stables','pikeman_barracks','monastery','fairground'],prereqs:['tech_iron_culture']},
+            {id:'tech_feudal_transition',name:'Señoríos y Arquitectura Feudal',era:ERAS.FEUDAL,reqCoins:4000,reqGoods:{silk:12,honey:12},reqUnits:{knight:3},unlocks:['feudal_manor','burgher_house','glassworks','herb_garden','wool_mill','crossbow_barracks','mace_barracks','cathedral','tournament_grounds'],prereqs:['tech_early_middle_transition']},
+            {id:'tech_castles_transition',name:'Fortificaciones y Castillos',era:ERAS.CASTLES,reqCoins:6500,reqGoods:{glass:15,wool:12},reqUnits:{crossbowman:3},unlocks:['castle_keep','stone_tower_house','armory','tapestry_workshop','salt_mine','heavy_knight_stables','longbow_range','castle','jousting_arena'],prereqs:['tech_feudal_transition']},
+            {id:'tech_imperial_transition',name:'Tácticas de Pólvora e Imperio',era:ERAS.IMPERIAL,reqCoins:10500,reqGoods:{chainmail:15,tapestry:10},reqUnits:{templar:3},unlocks:['imperial_palace','baroque_mansion','gunpowder_mill','porcelain_kiln','coffee_plantation','cannon_foundry','musket_barracks','enlightenment_cathedral','opera_house'],prereqs:['tech_castles_transition']},
+            {id:'tech_enlightenment_transition',name:'Enciclopedismo y Razón',era:ERAS.ENLIGHTENMENT,reqCoins:19000,reqGoods:{gunpowder:20,salt:15},reqUnits:{cannon:3},unlocks:['enlightened_mansion','georgian_townhouse','paper_mill','ink_workshop','cotton_plantation','rifle_barracks','grenadier_barracks','science_academy','museum'],prereqs:['tech_imperial_transition']},
+            {id:'tech_industrial_transition',name:'Revolución del Vapor y Carbón',era:ERAS.INDUSTRIAL,reqCoins:32000,reqGoods:{paper:20,coffee:15},reqUnits:{rifleman:3},unlocks:['victorian_house','tenement_block','steel_mill','coal_mine','cement_plant','heavy_artillery_factory','gatling_factory','central_station','world_exhibition'],prereqs:['tech_enlightenment_transition']},
+            {id:'tech_mechanized_warfare',name:'Ingeniería Mecánica y Tanques',era:ERAS.INDUSTRIAL,reqCoins:52000,reqGoods:{steel:25,cement:20},reqUnits:{howitzer:2},unlocks:['steam_tank_factory'],prereqs:['tech_industrial_transition']},
+            {id:'tech_atomic_transition',name:'Fisión Nuclear y Era Atómica',era:ERAS.ATOMIC,reqCoins:85000,reqGoods:{steel:30,coal:25},reqUnits:{steam_tank:2},unlocks:['atomic_bunker','suburban_complex','uranium_plant','aluminum_smelter','oil_refinery','nuclear_missile_silo','helicopter_base','atomic_monument','television_tower'],prereqs:['tech_mechanized_warfare']},
+            {id:'tech_information_transition',name:'Redes Globales y Era de la Información',era:ERAS.INFORMATION,reqCoins:155000,reqGoods:{uranium:20,aluminum:18},reqUnits:{atomic_soldier:3},unlocks:['cyber_apartment','smart_tower','semi_factory','fiber_lab','biotech_lab','drone_base','mech_infantry_base','holo_park','stadium_online'],prereqs:['tech_atomic_transition']},
+            {id:'tech_robots_transition',name:'Inteligencia Artificial y Era de los Robots',era:ERAS.ROBOTS,reqCoins:310000,reqGoods:{semiconductors:25,fiberoptics:22},reqUnits:{drone:3},unlocks:['robot_domicle','orbital_habitat','nanobot_lab','graphene_forge','fusion_plant','cyborg_factory','titan_factory','ai_core','virtual_world'],prereqs:['tech_information_transition']}
+        ];
+
+        /* MARAVILLAS DEL MUNDO */
+        const WONDERS = {
+            bronze_ziggurat:{id:'bronze_ziggurat',name:'Zigurat de Ur',era:ERAS.BRONZE,costCoins:2500,reqGoods:{stone:15,copper:10},effectType:'coinBoost',effectValue:0.15,icon:'fa-place-of-worship',
+                description:'+15% producción de monedas en toda la ciudad.'},
+            iron_colosseum:{id:'iron_colosseum',name:'Coliseo de Roma',era:ERAS.IRON,costCoins:6000,reqGoods:{iron:20,pottery:15},effectType:'armyAtk',effectValue:0.10,icon:'fa-landmark',
+                description:'+10% ataque a todo el ejército.'},
+            middle_glastonbury:{id:'middle_glastonbury',name:'Abadía de Glastonbury',era:ERAS.EARLY_MIDDLE,costCoins:12000,reqGoods:{silk:20,honey:20},effectType:'happiness',effectValue:500,icon:'fa-church',
+                description:'+500 de Felicidad global.'},
+            feudal_notre_dame:{id:'feudal_notre_dame',name:'Notre-Dame de París',era:ERAS.FEUDAL,costCoins:20000,reqGoods:{glass:20,wool:15},effectType:'goodsBoost',effectValue:0.15,icon:'fa-church',
+                description:'+15% producción de bienes en fábricas.'},
+            castles_krak:{id:'castles_krak',name:'Castillo de Krak',era:ERAS.CASTLES,costCoins:35000,reqGoods:{chainmail:25,salt:20},effectType:'armyDef',effectValue:0.20,icon:'fa-chess-rook',
+                description:'+20% defensa a todo el ejército.'},
+            imperial_taj:{id:'imperial_taj',name:'Taj Mahal Imperial',era:ERAS.IMPERIAL,costCoins:60000,reqGoods:{porcelain:30,coffee:25},effectType:'popBoost',effectValue:0.15,icon:'fa-landmark-dome',
+                description:'+15% población máxima de la ciudad.'},
+            enlightenment_versailles:{id:'enlightenment_versailles',name:'Palacio de Versalles',era:ERAS.ENLIGHTENMENT,costCoins:110000,reqGoods:{paper:40,ink:30},effectType:'allBoost',effectValue:0.10,icon:'fa-crown',
+                description:'+10% a todas las producciones.'},
+            industrial_bigben:{id:'industrial_bigben',name:'Big Ben',era:ERAS.INDUSTRIAL,costCoins:220000,reqGoods:{steel:50,cement:40},effectType:'speedBoost',effectValue:0.20,icon:'fa-clock',
+                description:'-20% tiempo de producción en toda la ciudad.'},
+            atomic_hoover:{id:'atomic_hoover',name:'Presa de Hoover',era:ERAS.ATOMIC,costCoins:450000,reqGoods:{uranium:40,aluminum:35},effectType:'coinBoost',effectValue:0.30,icon:'fa-water',
+                description:'+30% producción de monedas.'},
+            information_internet:{id:'information_internet',name:'Cúpula de Internet',era:ERAS.INFORMATION,costCoins:900000,reqGoods:{semiconductors:50,fiberoptics:45},effectType:'allBoost',effectValue:0.20,icon:'fa-globe',
+                description:'+20% a todas las producciones y al ejército.'},
+            robots_arcology:{id:'robots_arcology',name:'Arcosfera de Rubí',era:ERAS.ROBOTS,costCoins:2000000,reqGoods:{nanobots:60,graphene:55},effectType:'allBoost',effectValue:0.35,icon:'fa-satellite',
+                description:'+35% a todas las producciones y al ejército.'}
+        };
+
+        /* HÉROES LEGENDARIOS */
+        const HEROES = {
+            gilgamesh:{id:'gilgamesh',name:'Gilgamesh',era:ERAS.BRONZE,costDiamonds:3,atkBonus:0.10,defBonus:0.05,icon:'fa-crown',description:'Rey de Uruk. +10% Ataque, +5% Defensa.'},
+            hammurabi:{id:'hammurabi',name:'Hammurabi',era:ERAS.BRONZE,costDiamonds:4,atkBonus:0.05,defBonus:0.15,icon:'fa-scroll',description:'Legislador de Babilonia. +5% Ataque, +15% Defensa.'},
+            hannibal:{id:'hannibal',name:'Aníbal Barca',era:ERAS.IRON,costDiamonds:6,atkBonus:0.20,defBonus:0.10,icon:'fa-horse-head',description:'General cartaginés. +20% Ataque, +10% Defensa.'},
+            spartacus:{id:'spartacus',name:'Espartaco',era:ERAS.IRON,costDiamonds:7,atkBonus:0.15,defBonus:0.15,icon:'fa-hand-fist',description:'Líder rebelde. +15% Ataque y Defensa.'},
+            charlemagne:{id:'charlemagne',name:'Carlomagno',era:ERAS.EARLY_MIDDLE,costDiamonds:10,atkBonus:0.25,defBonus:0.20,icon:'fa-crown',description:'Emperador carolingio. +25% Ataque, +20% Defensa.'},
+            saladin:{id:'saladin',name:'Saladino',era:ERAS.EARLY_MIDDLE,costDiamonds:11,atkBonus:0.20,defBonus:0.30,icon:'fa-scimitar',description:'Sultán de Egipto. +20% Ataque, +30% Defensa.'},
+            joan_of_arc:{id:'joan_of_arc',name:'Juana de Arco',era:ERAS.FEUDAL,costDiamonds:15,atkBonus:0.35,defBonus:0.25,icon:'fa-flag',description:'Doncella de Orleans. +35% Ataque, +25% Defensa.'},
+            genghis_khan:{id:'genghis_khan',name:'Gengis Kan',era:ERAS.FEUDAL,costDiamonds:16,atkBonus:0.45,defBonus:0.15,icon:'fa-horse',description:'Gran Kan mongol. +45% Ataque, +15% Defensa.'},
+            william_conqueror:{id:'william_conqueror',name:'Guillermo el Conquistador',era:ERAS.CASTLES,costDiamonds:22,atkBonus:0.40,defBonus:0.40,icon:'fa-chess-rook',description:'Duque de Normandía. +40% Ataque y Defensa.'},
+            saladin_castles:{id:'saladin_castles',name:'Ricardo Corazón de León',era:ERAS.CASTLES,costDiamonds:24,atkBonus:0.50,defBonus:0.35,icon:'fa-shield-halved',description:'Rey de Inglaterra. +50% Ataque, +35% Defensa.'},
+            napoleon:{id:'napoleon',name:'Napoleón Bonaparte',era:ERAS.IMPERIAL,costDiamonds:35,atkBonus:0.60,defBonus:0.45,icon:'fa-crown',description:'Emperador francés. +60% Ataque, +45% Defensa.'},
+            wellington:{id:'wellington',name:'Duque de Wellington',era:ERAS.IMPERIAL,costDiamonds:38,atkBonus:0.45,defBonus:0.60,icon:'fa-shield',description:'Vencedor de Waterloo. +45% Ataque, +60% Defensa.'},
+            washington:{id:'washington',name:'George Washington',era:ERAS.ENLIGHTENMENT,costDiamonds:55,atkBonus:0.70,defBonus:0.60,icon:'fa-flag-usa',description:'Padre fundador. +70% Ataque, +60% Defensa.'},
+            bolivar:{id:'bolivar',name:'Simón Bolívar',era:ERAS.ENLIGHTENMENT,costDiamonds:58,atkBonus:0.65,defBonus:0.70,icon:'fa-star',description:'El Libertador. +65% Ataque, +70% Defensa.'},
+            grant:{id:'grant',name:'Ulysses S. Grant',era:ERAS.INDUSTRIAL,costDiamonds:80,atkBonus:0.85,defBonus:0.75,icon:'fa-medal',description:'General de la Unión. +85% Ataque, +75% Defensa.'},
+            bismarck:{id:'bismarck',name:'Otto von Bismarck',era:ERAS.INDUSTRIAL,costDiamonds:85,atkBonus:0.75,defBonus:0.90,icon:'fa-chess-king',description:'Canciller de hierro. +75% Ataque, +90% Defensa.'},
+            eisenhower:{id:'eisenhower',name:'Dwight D. Eisenhower',era:ERAS.ATOMIC,costDiamonds:120,atkBonus:1.10,defBonus:1.00,icon:'fa-star-of-life',description:'Comandante supremo. +110% Ataque, +100% Defensa.'},
+            zhukov:{id:'zhukov',name:'Gueorgui Zhúkov',era:ERAS.ATOMIC,costDiamonds:130,atkBonus:1.20,defBonus:0.90,icon:'fa-shield-halved',description:'Mariscal soviético. +120% Ataque, +90% Defensa.'},
+            gates:{id:'gates',name:'General Gates',era:ERAS.INFORMATION,costDiamonds:200,atkBonus:1.50,defBonus:1.40,icon:'fa-microchip',description:'Estratega digital. +150% Ataque, +140% Defensa.'},
+            khan_cyber:{id:'khan_cyber',name:'Khan Cibernético',era:ERAS.INFORMATION,costDiamonds:220,atkBonus:1.65,defBonus:1.30,icon:'fa-network-wired',description:'Señor de las redes. +165% Ataque, +130% Defensa.'},
+            neo_archon:{id:'neo_archon',name:'Neo-Arconte',era:ERAS.ROBOTS,costDiamonds:350,atkBonus:2.00,defBonus:1.80,icon:'fa-robot',description:'Comandante de IA. +200% Ataque, +180% Defensa.'},
+            titan_prime:{id:'titan_prime',name:'Titán Primigenio',era:ERAS.ROBOTS,costDiamonds:400,atkBonus:1.85,defBonus:2.10,icon:'fa-atom',description:'Mente colmena. +185% Ataque, +210% Defensa.'}
+        };
+
+        /* LOGROS */
+        const ACHIEVEMENTS = [
+            {id:'first_steps',name:'Primeros Pasos',desc:'Construye 3 edificios en tu ciudad.',reward:2,check:s=>s.cityGrid.filter(c=>c).length>=3},
+            {id:'first_tech',name:'Erudito Novato',desc:'Investiga tu primera tecnología.',reward:2,check:s=>s.unlockedTechs.length>=1},
+            {id:'warrior',name:'Guerrero Iniciado',desc:'Recluta 5 unidades militares.',reward:3,check:s=>s.army.reduce((a,b)=>a+b.count,0)>=5},
+            {id:'conqueror_1',name:'Conquistador Novato',desc:'Conquista 5 provincias.',reward:5,check:s=>s.provinces.filter(p=>p.conquered).length>=5},
+            {id:'rich_1',name:'Mercader Rico',desc:'Acumula 10.000 monedas.',reward:5,check:s=>s.coins>=10000},
+            {id:'trade_1',name:'Comerciante',desc:'Ten al menos 50 unidades de bienes totales.',reward:4,check:s=>Object.values(s.inventoryGoods).reduce((a,b)=>a+b,0)>=50},
+            {id:'builder',name:'Arquitecto',desc:'Construye 15 edificios.',reward:8,check:s=>s.cityGrid.filter(c=>c).length>=15},
+            {id:'builder_50',name:'Urbanista',desc:'Construye 50 edificios.',reward:35,check:s=>s.cityGrid.filter(c=>c).length>=50},
+            {id:'builder_150',name:'Metrópoli',desc:'Construye 150 edificios.',reward:90,check:s=>s.cityGrid.filter(c=>c).length>=150},
+            {id:'upgrade_master',name:'Maestro Constructor',desc:'Sube 5 edificios a nivel 3 o más.',reward:12,check:s=>s.cityGrid.filter(c=>c&&c.level>=3).length>=5},
+            {id:'iron_era',name:'Era de Hierro',desc:'Alcanza la Edad de Hierro.',reward:10,check:s=>s.unlockedTechs.includes('tech_iron_age_transition')},
+            {id:'castle_era',name:'Señor de Castillos',desc:'Alcanza la Edad de los Castillos.',reward:25,check:s=>s.unlockedTechs.includes('tech_castles_transition')},
+            {id:'industrial_era',name:'Industrialista',desc:'Alcanza la Era Industrial.',reward:60,check:s=>s.unlockedTechs.includes('tech_industrial_transition')},
+            {id:'robot_era',name:'Señor de las Máquinas',desc:'Alcanza la Edad de los Robots.',reward:150,check:s=>s.unlockedTechs.includes('tech_robots_transition')},
+            {id:'conqueror_25',name:'Gran Conquistador',desc:'Conquista 25 provincias.',reward:20,check:s=>s.provinces.filter(p=>p.conquered).length>=25},
+            {id:'conqueror_50',name:'Emperador Continental',desc:'Conquista 50 provincias.',reward:60,check:s=>s.provinces.filter(p=>p.conquered).length>=50},
+            {id:'conqueror_100',name:'Señor del Mundo',desc:'Conquista las 100 provincias.',reward:250,check:s=>s.provinces.filter(p=>p.conquered).length>=100},
+            {id:'hero_recruit',name:'Líder Nato',desc:'Recluta tu primer héroe.',reward:5,check:s=>s.heroes.length>=1},
+            {id:'hero_squad',name:'Compañía Legendaria',desc:'Recluta 5 héroes.',reward:30,check:s=>s.heroes.length>=5},
+            {id:'wonder_builder',name:'Constructor de Maravillas',desc:'Completa tu primera Maravilla.',reward:20,check:s=>s.wonders.length>=1},
+            {id:'wonder_collector',name:'Coleccionista de Maravillas',desc:'Completa 5 Maravillas.',reward:80,check:s=>s.wonders.length>=5},
+            {id:'diamond_hoarder',name:'Coleccionista de Gemas',desc:'Acumula 100 diamantes.',reward:25,check:s=>s.diamonds>=100},
+            {id:'lvl5_empire',name:'Imperio en Ascenso',desc:'Alcanza el Nivel de Imperio 5.',reward:10,check:s=>(s.empireLevel||1)>=5},
+            {id:'lvl15_empire',name:'Potencia Emergente',desc:'Alcanza el Nivel de Imperio 15.',reward:40,check:s=>(s.empireLevel||1)>=15},
+            {id:'lvl30_empire',name:'Superpotencia',desc:'Alcanza el Nivel de Imperio 30.',reward:120,check:s=>(s.empireLevel||1)>=30},
+            {id:'mission_5',name:'Cumplidor',desc:'Completa 5 misiones diarias.',reward:10,check:s=>(s.missionsClaimed||0)>=5},
+            {id:'mission_25',name:'Agente del Imperio',desc:'Completa 25 misiones diarias.',reward:45,check:s=>(s.missionsClaimed||0)>=25},
+            {id:'trader_10',name:'Mercader Astuto',desc:'Realiza 10 intercambios en el Mercado.',reward:15,check:s=>(s.marketTrades||0)>=10},
+            {id:'trader_50',name:'Magnate del Comercio',desc:'Realiza 50 intercambios en el Mercado.',reward:60,check:s=>(s.marketTrades||0)>=50}
+        ];
+
+        /* PROVINCIAS (100) */
+        const PROVINCES = [
+            {id:1,name:'Provincia de Dunarsund',era:ERAS.BRONZE,enemyAtk:10,enemyDef:10,rewardCoins:350,rewardDiamonds:1,conquered:false},
+            {id:2,name:'Tierras de Hymir',era:ERAS.BRONZE,enemyAtk:22,enemyDef:20,rewardGoods:{wood:10,stone:10},conquered:false},
+            {id:3,name:'Valle de Urik',era:ERAS.BRONZE,enemyAtk:35,enemyDef:30,rewardCoins:450,conquered:false},
+            {id:4,name:'Colinas de Asaria',era:ERAS.BRONZE,enemyAtk:50,enemyDef:45,rewardGoods:{wood:15,wine:10},conquered:false},
+            {id:5,name:'Páramo del Sol',era:ERAS.BRONZE,enemyAtk:65,enemyDef:60,rewardCoins:600,rewardDiamonds:1,conquered:false},
+            {id:6,name:'Garganta del Tigris',era:ERAS.BRONZE,enemyAtk:80,enemyDef:75,rewardGoods:{stone:15,wine:10},conquered:false},
+            {id:7,name:'Costa de Cobre',era:ERAS.BRONZE,enemyAtk:100,enemyDef:95,rewardCoins:800,rewardGoods:{copper:8},conquered:false},
+            {id:8,name:'Bosque Sombrío de Bronce',era:ERAS.BRONZE,enemyAtk:120,enemyDef:110,rewardGoods:{wood:20,limestone:10},conquered:false},
+            {id:9,name:'Cima de la Aurora',era:ERAS.BRONZE,enemyAtk:140,enemyDef:130,rewardCoins:1000,conquered:false},
+            {id:10,name:'Bastión del Primer Rey',era:ERAS.BRONZE,enemyAtk:170,enemyDef:160,rewardCoins:1500,rewardGoods:{wood:25,stone:25,copper:10},rewardDiamonds:3,conquered:false},
+            {id:11,name:'Reino de Badakus',era:ERAS.IRON,enemyAtk:200,enemyDef:190,rewardCoins:1800,conquered:false},
+            {id:12,name:'Canteras de Kark',era:ERAS.IRON,enemyAtk:240,enemyDef:230,rewardGoods:{iron:15,cloth:10},conquered:false},
+            {id:13,name:'Estuario de Tyras',era:ERAS.IRON,enemyAtk:280,enemyDef:270,rewardCoins:2200,conquered:false},
+            {id:14,name:'Llanura de Megido',era:ERAS.IRON,enemyAtk:330,enemyDef:310,rewardGoods:{iron:20,ebony:10},conquered:false},
+            {id:15,name:'Colinas de Hierro Viejo',era:ERAS.IRON,enemyAtk:380,enemyDef:360,rewardCoins:2700,rewardDiamonds:2,conquered:false},
+            {id:16,name:'Paso de las Termópilas',era:ERAS.IRON,enemyAtk:440,enemyDef:420,rewardGoods:{cloth:20,pottery:10},conquered:false},
+            {id:17,name:'Desfiladero del Trueno',era:ERAS.IRON,enemyAtk:500,enemyDef:480,rewardCoins:3300,conquered:false},
+            {id:18,name:'Bahía de los Naufragios',era:ERAS.IRON,enemyAtk:570,enemyDef:540,rewardGoods:{iron:25,cloth:25},conquered:false},
+            {id:19,name:'Atalaya del Norte',era:ERAS.IRON,enemyAtk:640,enemyDef:610,rewardCoins:4000,conquered:false},
+            {id:20,name:'Ciudadela de Hierro',era:ERAS.IRON,enemyAtk:720,enemyDef:680,rewardCoins:5000,rewardGoods:{iron:30,ebony:15},rewardDiamonds:4,conquered:false},
+            {id:21,name:'Fortaleza de Narval',era:ERAS.EARLY_MIDDLE,enemyAtk:800,enemyDef:760,rewardCoins:5800,conquered:false},
+            {id:22,name:'Bosque de Brocelianda',era:ERAS.EARLY_MIDDLE,enemyAtk:890,enemyDef:850,rewardCoins:6700,rewardGoods:{silk:10},conquered:false},
+            {id:23,name:'Marquesado de Oakhaven',era:ERAS.EARLY_MIDDLE,enemyAtk:980,enemyDef:940,rewardCoins:7700,conquered:false},
+            {id:24,name:'Valle de los Caballeros',era:ERAS.EARLY_MIDDLE,enemyAtk:1080,enemyDef:1030,rewardCoins:8800,rewardGoods:{honey:12},conquered:false},
+            {id:25,name:'Abadía de San Albano',era:ERAS.EARLY_MIDDLE,enemyAtk:1190,enemyDef:1140,rewardCoins:10000,rewardDiamonds:3,conquered:false},
+            {id:26,name:'Puerto de Ravenclaw',era:ERAS.EARLY_MIDDLE,enemyAtk:1310,enemyDef:1250,rewardCoins:11300,rewardGoods:{silk:15},conquered:false},
+            {id:27,name:'Colinas de Monasterio',era:ERAS.EARLY_MIDDLE,enemyAtk:1440,enemyDef:1380,rewardCoins:12700,conquered:false},
+            {id:28,name:'Santuario del Valle',era:ERAS.EARLY_MIDDLE,enemyAtk:1580,enemyDef:1510,rewardCoins:14200,rewardGoods:{honey:18},conquered:false},
+            {id:29,name:'Frontera del Este',era:ERAS.EARLY_MIDDLE,enemyAtk:1730,enemyDef:1650,rewardCoins:15800,conquered:false},
+            {id:30,name:'Torreón del Halcón',era:ERAS.EARLY_MIDDLE,enemyAtk:1900,enemyDef:1810,rewardCoins:18000,rewardGoods:{silk:20,honey:20},rewardDiamonds:5,conquered:false},
+            {id:31,name:'Ducado de Aquitania',era:ERAS.FEUDAL,enemyAtk:2080,enemyDef:1980,rewardCoins:20000,rewardGoods:{glass:15},conquered:false},
+            {id:32,name:'Campos de Bretaña',era:ERAS.FEUDAL,enemyAtk:2280,enemyDef:2170,rewardCoins:22500,conquered:false},
+            {id:33,name:'Castillo de Flandes',era:ERAS.FEUDAL,enemyAtk:2490,enemyDef:2370,rewardCoins:25200,rewardGoods:{wool:12},conquered:false},
+            {id:34,name:'Colinas de Borgoña',era:ERAS.FEUDAL,enemyAtk:2720,enemyDef:2590,rewardCoins:28100,conquered:false},
+            {id:35,name:'Valles de Gascuña',era:ERAS.FEUDAL,enemyAtk:2970,enemyDef:2830,rewardCoins:31300,rewardGoods:{herbs:15},conquered:false},
+            {id:36,name:'Río de Normandía',era:ERAS.FEUDAL,enemyAtk:3240,enemyDef:3080,rewardCoins:34800,conquered:false},
+            {id:37,name:'Pradera de Provenza',era:ERAS.FEUDAL,enemyAtk:3530,enemyDef:3360,rewardCoins:38600,rewardGoods:{wool:18},conquered:false},
+            {id:38,name:'Paso de los Vosgos',era:ERAS.FEUDAL,enemyAtk:3840,enemyDef:3650,rewardCoins:42700,conquered:false},
+            {id:39,name:'Señorío de Tolosa',era:ERAS.FEUDAL,enemyAtk:4170,enemyDef:3960,rewardCoins:47200,rewardGoods:{glass:25,herbs:20},conquered:false},
+            {id:40,name:'Catedral del Dominio',era:ERAS.FEUDAL,enemyAtk:4530,enemyDef:4300,rewardCoins:52000,rewardGoods:{glass:30,wool:25},rewardDiamonds:6,conquered:false},
+            {id:41,name:'Bastión del Cuervo',era:ERAS.CASTLES,enemyAtk:4920,enemyDef:4670,rewardCoins:57000,rewardGoods:{chainmail:15},conquered:false},
+            {id:42,name:'Murallas de Dunwall',era:ERAS.CASTLES,enemyAtk:5340,enemyDef:5070,rewardCoins:62500,conquered:false},
+            {id:43,name:'Foso del Dragón',era:ERAS.CASTLES,enemyAtk:5790,enemyDef:5500,rewardCoins:68500,rewardGoods:{tapestry:12},conquered:false},
+            {id:44,name:'Páramo de las Nieves',era:ERAS.CASTLES,enemyAtk:6280,enemyDef:5960,rewardCoins:75000,conquered:false},
+            {id:45,name:'Torre de las Siete Campanas',era:ERAS.CASTLES,enemyAtk:6810,enemyDef:6460,rewardCoins:82000,rewardGoods:{salt:15},conquered:false},
+            {id:46,name:'Desfiladero de Piedra Oscura',era:ERAS.CASTLES,enemyAtk:7380,enemyDef:7000,rewardCoins:90000,conquered:false},
+            {id:47,name:'Puerto de la Bruma',era:ERAS.CASTLES,enemyAtk:8000,enemyDef:7590,rewardCoins:99000,rewardGoods:{tapestry:18},conquered:false},
+            {id:48,name:'Meseta del Viento',era:ERAS.CASTLES,enemyAtk:8670,enemyDef:8220,rewardCoins:109000,conquered:false},
+            {id:49,name:'Atalaya del Guardián',era:ERAS.CASTLES,enemyAtk:9390,enemyDef:8900,rewardCoins:120000,rewardGoods:{salt:25},conquered:false},
+            {id:50,name:'Alcázar Real',era:ERAS.CASTLES,enemyAtk:10170,enemyDef:9640,rewardCoins:132000,rewardGoods:{chainmail:30,tapestry:25},rewardDiamonds:8,conquered:false},
+            {id:51,name:'Imperio del Norte',era:ERAS.IMPERIAL,enemyAtk:11010,enemyDef:10430,rewardCoins:145000,rewardGoods:{gunpowder:20},conquered:false},
+            {id:52,name:'Campamento de la Guardia',era:ERAS.IMPERIAL,enemyAtk:11920,enemyDef:11290,rewardCoins:160000,conquered:false},
+            {id:53,name:'Arsenal del Emperador',era:ERAS.IMPERIAL,enemyAtk:12900,enemyDef:12220,rewardCoins:176000,rewardGoods:{porcelain:15},conquered:false},
+            {id:54,name:'Plaza de Armas Imperial',era:ERAS.IMPERIAL,enemyAtk:13950,enemyDef:13210,rewardCoins:194000,conquered:false},
+            {id:55,name:'Bastión de la Pólvora',era:ERAS.IMPERIAL,enemyAtk:15080,enemyDef:14270,rewardCoins:214000,rewardGoods:{coffee:15},conquered:false},
+            {id:56,name:'Valle de los Cañones',era:ERAS.IMPERIAL,enemyAtk:16300,enemyDef:15420,rewardCoins:236000,conquered:false},
+            {id:57,name:'Frontera de la Corona',era:ERAS.IMPERIAL,enemyAtk:17610,enemyDef:16660,rewardCoins:260000,rewardGoods:{gunpowder:30},conquered:false},
+            {id:58,name:'Colinas del Ocaso',era:ERAS.IMPERIAL,enemyAtk:19020,enemyDef:17990,rewardCoins:287000,conquered:false},
+            {id:59,name:'Palacio de los Virreyes',era:ERAS.IMPERIAL,enemyAtk:20540,enemyDef:19430,rewardCoins:317000,rewardGoods:{porcelain:25},conquered:false},
+            {id:60,name:'Ciudadela Imperial',era:ERAS.IMPERIAL,enemyAtk:22170,enemyDef:20980,rewardCoins:350000,rewardGoods:{gunpowder:40,coffee:30},rewardDiamonds:10,conquered:false},
+            {id:61,name:'Principado de las Luces',era:ERAS.ENLIGHTENMENT,enemyAtk:23920,enemyDef:22620,rewardCoins:390000,rewardGoods:{paper:25},conquered:false},
+            {id:62,name:'Academia de Filosofía',era:ERAS.ENLIGHTENMENT,enemyAtk:25800,enemyDef:24390,rewardCoins:435000,rewardGoods:{ink:20},conquered:false},
+            {id:63,name:'Biblioteca de Alejandría',era:ERAS.ENLIGHTENMENT,enemyAtk:27820,enemyDef:26290,rewardCoins:485000,conquered:false},
+            {id:64,name:'Plaza de la Razón',era:ERAS.ENLIGHTENMENT,enemyAtk:29990,enemyDef:28330,rewardCoins:540000,rewardGoods:{cotton:20},conquered:false},
+            {id:65,name:'Jardines de Versalles',era:ERAS.ENLIGHTENMENT,enemyAtk:32320,enemyDef:30520,rewardCoins:600000,conquered:false},
+            {id:66,name:'Taller de Imprenta',era:ERAS.ENLIGHTENMENT,enemyAtk:34820,enemyDef:32880,rewardCoins:670000,rewardGoods:{paper:35,ink:30},conquered:false},
+            {id:67,name:'Universidad del Norte',era:ERAS.ENLIGHTENMENT,enemyAtk:37510,enemyDef:35420,rewardCoins:750000,conquered:false},
+            {id:68,name:'Observatorio Astronómico',era:ERAS.ENLIGHTENMENT,enemyAtk:40390,enemyDef:38130,rewardCoins:840000,rewardGoods:{cotton:30},conquered:false},
+            {id:69,name:'Dominio de los Sabios',era:ERAS.ENLIGHTENMENT,enemyAtk:43480,enemyDef:41040,rewardCoins:940000,conquered:false},
+            {id:70,name:'Capital de la Ilustración',era:ERAS.ENLIGHTENMENT,enemyAtk:46800,enemyDef:44170,rewardCoins:1050000,rewardGoods:{paper:50,ink:45},rewardDiamonds:15,conquered:false},
+            {id:71,name:'Metrópolis de Carbón',era:ERAS.INDUSTRIAL,enemyAtk:50350,enemyDef:47500,rewardCoins:1180000,rewardGoods:{coal:25},conquered:false},
+            {id:72,name:'Alto Horno Central',era:ERAS.INDUSTRIAL,enemyAtk:54180,enemyDef:51100,rewardCoins:1320000,rewardGoods:{steel:20},conquered:false},
+            {id:73,name:'Valle de las Chimeneas',era:ERAS.INDUSTRIAL,enemyAtk:58310,enemyDef:54990,rewardCoins:1480000,conquered:false},
+            {id:74,name:'Estación de Ferrocarril',era:ERAS.INDUSTRIAL,enemyAtk:62770,enemyDef:59180,rewardCoins:1660000,rewardGoods:{cement:25},conquered:false},
+            {id:75,name:'Minas de Hierro Profundo',era:ERAS.INDUSTRIAL,enemyAtk:67580,enemyDef:63710,rewardCoins:1860000,conquered:false},
+            {id:76,name:'Fábrica Textil de Coton',era:ERAS.INDUSTRIAL,enemyAtk:72770,enemyDef:68570,rewardCoins:2080000,rewardGoods:{steel:30},conquered:false},
+            {id:77,name:'Puerto de Carga a Vapor',era:ERAS.INDUSTRIAL,enemyAtk:78370,enemyDef:73840,rewardCoins:2330000,conquered:false},
+            {id:78,name:'Distrito de los Obreros',era:ERAS.INDUSTRIAL,enemyAtk:84400,enemyDef:79500,rewardCoins:2610000,rewardGoods:{coal:35},conquered:false},
+            {id:79,name:'Centro Siderúrgico',era:ERAS.INDUSTRIAL,enemyAtk:90890,enemyDef:85610,rewardCoins:2920000,conquered:false},
+            {id:80,name:'Complejo Industrial Victoriano',era:ERAS.INDUSTRIAL,enemyAtk:97870,enemyDef:92170,rewardCoins:3270000,rewardGoods:{steel:60,cement:45},rewardDiamonds:20,conquered:false},
+            {id:81,name:'Zona Cero Atómica',era:ERAS.ATOMIC,enemyAtk:105380,enemyDef:99230,rewardCoins:3670000,rewardGoods:{uranium:20},conquered:false},
+            {id:82,name:'Planta de Fisión',era:ERAS.ATOMIC,enemyAtk:113460,enemyDef:106830,rewardCoins:4120000,conquered:false},
+            {id:83,name:'Silo de Misiles Alfa',era:ERAS.ATOMIC,enemyAtk:122170,enemyDef:115020,rewardCoins:4620000,rewardGoods:{aluminum:20},conquered:false},
+            {id:84,name:'Laboratorio de Isótopos',era:ERAS.ATOMIC,enemyAtk:131550,enemyDef:123840,rewardCoins:5180000,conquered:false},
+            {id:85,name:'Búnker Subterráneo Beta',era:ERAS.ATOMIC,enemyAtk:141660,enemyDef:133340,rewardCoins:5810000,rewardGoods:{petro:20},conquered:false},
+            {id:86,name:'Reactor de Agua Pesada',era:ERAS.ATOMIC,enemyAtk:152560,enemyDef:143580,rewardCoins:6510000,conquered:false},
+            {id:87,name:'Base de Pruebas Nucleares',era:ERAS.ATOMIC,enemyAtk:164310,enemyDef:154620,rewardCoins:7300000,rewardGoods:{uranium:30},conquered:false},
+            {id:88,name:'Complejo de Enriquecimiento',era:ERAS.ATOMIC,enemyAtk:176980,enemyDef:166540,rewardCoins:8180000,conquered:false},
+            {id:89,name:'Torre de Control Atómico',era:ERAS.ATOMIC,enemyAtk:190640,enemyDef:179370,rewardCoins:9170000,rewardGoods:{aluminum:35},conquered:false},
+            {id:90,name:'Ciudadela del Átomo',era:ERAS.ATOMIC,enemyAtk:205370,enemyDef:193210,rewardCoins:10280000,rewardGoods:{uranium:50,petro:40},rewardDiamonds:30,conquered:false},
+            {id:91,name:'Red Central Cibernética',era:ERAS.INFORMATION,enemyAtk:221250,enemyDef:208130,rewardCoins:11520000,rewardGoods:{semiconductors:25},conquered:false},
+            {id:92,name:'Servidores Globales',era:ERAS.INFORMATION,enemyAtk:238380,enemyDef:224210,rewardCoins:12900000,conquered:false},
+            {id:93,name:'Base de Datos Satelital',era:ERAS.INFORMATION,enemyAtk:256840,enemyDef:241570,rewardCoins:14450000,rewardGoods:{fiberoptics:25},conquered:false},
+            {id:94,name:'Ciudad Digital Virtual',era:ERAS.INFORMATION,enemyAtk:276740,enemyDef:260270,rewardCoins:16200000,conquered:false},
+            {id:95,name:'Nodo Central de Internet',era:ERAS.INFORMATION,enemyAtk:298190,enemyDef:280450,rewardCoins:18150000,rewardGoods:{semiconductors:50,fiberoptics:45},rewardDiamonds:50,conquered:false},
+            {id:96,name:'Ciudadela Autónoma de los Robots',era:ERAS.ROBOTS,enemyAtk:321300,enemyDef:302220,rewardCoins:20330000,rewardGoods:{nanobots:30},conquered:false},
+            {id:97,name:'Fábrica de Ensamblaje IA',era:ERAS.ROBOTS,enemyAtk:346200,enemyDef:325600,rewardCoins:22770000,conquered:false},
+            {id:98,name:'Laboratorio de Nanobots',era:ERAS.ROBOTS,enemyAtk:373050,enemyDef:350860,rewardCoins:25500000,rewardGoods:{graphene:30},conquered:false},
+            {id:99,name:'Núcleo Cibernético Supremo',era:ERAS.ROBOTS,enemyAtk:401990,enemyDef:378070,rewardCoins:28560000,conquered:false},
+            {id:100,name:'Arcosfera Definitiva',era:ERAS.ROBOTS,enemyAtk:433230,enemyDef:407440,rewardCoins:32000000,rewardGoods:{nanobots:100,graphene:80},rewardDiamonds:200,conquered:false}
+        ];
+
+        /* ==============================
+           ESTADO
+           ============================== */
+        function createInitialGoods(){
+            const g={};
+            Object.keys(GOODS).forEach(k=>g[k]=0);
+            g.wood=5;g.stone=5;g.wine=5;
+            return g;
+        }
+
+        function createEmptyGrid(){
+            const g = new Array(GRID_TOTAL).fill(null);
+            g[CENTER_IDX] = {buildingId:'hut',timer:0,ready:false,level:1};
+            return g;
+        }
+
+        let gameState = {
+            era:ERAS.BRONZE,
+            coins:300,
+            diamonds:5,
+            populationTotal:0,
+            populationUsed:0,
+            happiness:100,
+            inventoryGoods:createInitialGoods(),
+            army:[],
+            cityGrid:createEmptyGrid(),
+            unlockedTechs:[],
+            unlockedBuildings:['hut','memorial'],
+            provinces:PROVINCES,
+            heroes:[],
+            activeHero:null,
+            wonders:[],
+            achievements:[],
+            xp:0,
+            empireLevel:1,
+            dailyMissions:[],
+            nextMissionReset:0,
+            missionsClaimed:0,
+            marketOffers:[],
+            marketTrades:0,
+            marketNextRefresh:0
+        };
+
+        /* ==============================
+           SISTEMA DE XP Y NIVEL DE IMPERIO
+           ============================== */
+        function totalXPForLevel(level){ return 50*level*(level-1); }
+        function getEmpireProductionBonus(){ return (gameState.empireLevel-1)*0.02; }
+
+        function addXP(amount){
+            if(amount<=0) return;
+            gameState.xp += amount;
+            let leveledUp = false;
+            while(gameState.xp >= totalXPForLevel(gameState.empireLevel+1)){
+                gameState.empireLevel++;
+                leveledUp = true;
+            }
+            if(leveledUp){
+                toast(`⭐ ¡Nivel de Imperio ${gameState.empireLevel}! +${Math.round(getEmpireProductionBonus()*100)}% producción`,'gold',5000);
+                playSound('unlock');
+                checkAchievements();
+            }
+            updateUI();
+        }
+
+        /* ==============================
+           SISTEMA DE MISIONES
+           ============================== */
+        const MISSION_POOL = [
+            {type:'collectCoins', minT:800, maxT:3000, minR:400, maxR:900, minD:1, maxD:2, icon:'fa-coins',
+             desc:t=>`Recolecta ${t} monedas de tus edificios`},
+            {type:'produceGoods', minT:15, maxT:50, minR:500, maxR:1100, minD:1, maxD:3, icon:'fa-boxes-stacked',
+             desc:t=>`Produce ${t} bienes en tus fábricas`},
+            {type:'trainUnits', minT:2, maxT:6, minR:350, maxR:800, minD:1, maxD:2, icon:'fa-shield-halved',
+             desc:t=>`Recluta ${t} unidades militares`},
+            {type:'buildBuildings', minT:1, maxT:3, minR:600, maxR:1400, minD:1, maxD:3, icon:'fa-hammer',
+             desc:t=>`Construye ${t} edificio(s) nuevo(s)`},
+            {type:'upgradeBuildings', minT:1, maxT:3, minR:500, maxR:1200, minD:1, maxD:2, icon:'fa-arrow-up',
+             desc:t=>`Mejora ${t} edificio(s) a un nivel superior`},
+            {type:'researchTech', minT:1, maxT:1, minR:900, maxR:2200, minD:2, maxD:4, icon:'fa-flask',
+             desc:t=>`Investiga ${t} tecnología(s)`},
+            {type:'conquerProvince', minT:1, maxT:2, minR:1200, maxR:2800, minD:3, maxD:5, icon:'fa-flag',
+             desc:t=>`Conquista ${t} provincia(s) en el mapa`},
+            {type:'xpGain', minT:50, maxT:200, minR:400, maxR:900, minD:1, maxD:2, icon:'fa-star',
+             desc:t=>`Gana ${t} XP de Imperio`}
+        ];
+
+        function generateDailyMissions(){
+            const pool = [...MISSION_POOL].sort(()=>Math.random()-0.5);
+            return pool.slice(0,3).map((p,i)=>{
+                const target = Math.floor(p.minT + Math.random()*(p.maxT-p.minT+1));
+                return {
+                    id: `m_${Date.now()}_${i}`,
+                    type: p.type,
+                    target,
+                    progress: 0,
+                    rewardCoins: Math.floor(p.minR + Math.random()*(p.maxR-p.minR+1)),
+                    rewardDiamonds: Math.floor(p.minD + Math.random()*(p.maxD-p.minD+1)),
+                    icon: p.icon,
+                    description: p.desc(target),
+                    claimed: false
+                };
+            });
+        }
+
+        function checkMissionReset(){
+            const now = Date.now();
+            if(!gameState.dailyMissions || gameState.dailyMissions.length===0 || now > gameState.nextMissionReset){
+                gameState.dailyMissions = generateDailyMissions();
+                gameState.nextMissionReset = now + 24*60*60*1000;
+            }
+        }
+
+        function rerollMissions(){
+            if(gameState.diamonds < 2){ toast('Necesitas 2 💎 para renovar misiones','error'); return; }
+            gameState.diamonds -= 2;
+            gameState.dailyMissions = generateDailyMissions();
+            playSound('unlock');
+            toast('Misiones renovadas','success');
+            renderMissions();
+            updateUI();
+        }
+
+        function trackMission(type, amount){
+            if(!gameState.dailyMissions) return;
+            let changed = false;
+            gameState.dailyMissions.forEach(m=>{
+                if(m.type===type && !m.claimed && m.progress < m.target){
+                    m.progress = Math.min(m.target, m.progress + amount);
+                    changed = true;
+                }
+            });
+            if(changed){
+                if(!document.getElementById('view-missions').classList.contains('hidden')) renderMissions();
+                updateMissionDot();
+            }
+        }
+
+        function claimMission(missionId){
+            const m = gameState.dailyMissions.find(x=>x.id===missionId);
+            if(!m || m.claimed) return;
+            if(m.progress < m.target){ toast('Misión aún no completada','warn'); return; }
+            m.claimed = true;
+            gameState.coins += m.rewardCoins;
+            gameState.diamonds += m.rewardDiamonds;
+            gameState.missionsClaimed++;
+            addXP(30);
+            playSound('coin');
+            toast(`¡Misión completada! +${m.rewardCoins}🪙 +${m.rewardDiamonds}💎 +30 XP`,'gold');
+            renderMissions();
+            updateUI();
+            checkAchievements();
+        }
+
+        function updateMissionDot(){
+            const dot = document.getElementById('missions-dot');
+            if(!dot) return;
+            const hasClaimable = gameState.dailyMissions && gameState.dailyMissions.some(m=>!m.claimed && m.progress>=m.target);
+            if(hasClaimable) dot.classList.remove('hidden');
+            else dot.classList.add('hidden');
+        }
+
+        function renderMissions(){
+            checkMissionReset();
+            const container = document.getElementById('missions-grid');
+            if(!container) return;
+            container.innerHTML='';
+
+            const claimed = gameState.dailyMissions.filter(m=>m.claimed).length;
+            document.getElementById('missions-claimed').textContent = `${claimed} / ${gameState.dailyMissions.length}`;
+            document.getElementById('missions-level').textContent = gameState.empireLevel;
+            document.getElementById('missions-prod-bonus').textContent = `+${Math.round(getEmpireProductionBonus()*100)}%`;
+
+            const curXP = gameState.xp - totalXPForLevel(gameState.empireLevel);
+            const nextXP = totalXPForLevel(gameState.empireLevel+1) - totalXPForLevel(gameState.empireLevel);
+            const pct = Math.max(0, Math.min(100, (curXP/nextXP)*100));
+            document.getElementById('missions-xp-bar').style.width = `${pct}%`;
+            document.getElementById('missions-xp-label').textContent = `${curXP} / ${nextXP} XP`;
+
+            gameState.dailyMissions.forEach(m=>{
+                const ready = !m.claimed && m.progress>=m.target;
+                const card = document.createElement('div');
+                card.className = `mission-card p-5 rounded-2xl flex flex-col ${m.claimed?'claimed':''} ${ready?'completed-ready':''}`;
+                const pctMission = Math.min(100, (m.progress/m.target)*100);
+                card.innerHTML = `
+                    <div class="flex items-start gap-3 mb-3">
+                        <div class="p-3 rounded-xl bg-slate-950 border border-cyan-500/40 text-cyan-300 text-xl">
+                            <i class="fa-solid ${m.icon}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm text-slate-100">${m.description}</h4>
+                            <div class="text-[11px] text-slate-400 mt-0.5">Recompensa: <span class="text-amber-300 font-bold">${m.rewardCoins}🪙</span> <span class="text-cyan-300 font-bold">${m.rewardDiamonds}💎</span> <span class="text-yellow-300 font-bold">+30 XP</span></div>
+                        </div>
+                        ${m.claimed?`<i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>`:''}
+                    </div>
+                    <div class="mb-3">
+                        <div class="flex justify-between text-xs text-slate-400 mb-1">
+                            <span>Progreso</span>
+                            <span class="font-bold ${ready?'text-emerald-300':'text-cyan-300'}">${m.progress} / ${m.target}</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                            <div class="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-300" style="width:${pctMission}%"></div>
+                        </div>
+                    </div>
+                    <button onclick="claimMission('${m.id}')" ${!ready?'disabled':''} class="mt-auto w-full py-2.5 rounded-xl font-bold text-xs transition ${ready?'bg-gradient-to-r from-amber-500 to-pink-500 hover:from-amber-400 text-slate-950 shadow-lg glow-gold':'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+                        ${m.claimed?'✓ Reclamada':(ready?'🎁 Reclamar recompensa':'En progreso...')}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+
+            updateMissionDot();
+        }
+
+        /* ==============================
+           SISTEMA DE MERCADO
+           ============================== */
+        const MARKET_REFRESH_MS = 5*60*1000;
+
+        function generateMarketOffers(){
+            const offers = [];
+            const goodsKeys = Object.keys(GOODS);
+            const currentEraIdx = ERA_ORDER.indexOf(gameState.era);
+            const relevantGoods = goodsKeys.filter(k=>{
+                const idx = ERA_ORDER.indexOf(GOODS[k].era);
+                return idx <= currentEraIdx + 1;
+            });
+            const pool = relevantGoods.length>=4 ? relevantGoods : goodsKeys;
+
+            for(let i=0;i<6;i++){
+                const isBuy = Math.random() < 0.55;
+                const goodKey = pool[Math.floor(Math.random()*pool.length)];
+                const eraIdx = ERA_ORDER.indexOf(GOODS[goodKey].era);
+                const basePrice = 30 + eraIdx*22;
+                const amount = 5 + Math.floor(Math.random()*15);
+                let price;
+                if(isBuy){
+                    price = Math.floor(amount*basePrice*(0.9 + Math.random()*0.3));
+                } else {
+                    price = Math.floor(amount*basePrice*(0.6 + Math.random()*0.25));
+                }
+                offers.push({
+                    id: `o_${Date.now()}_${i}`,
+                    type: isBuy?'buy':'sell',
+                    goodKey,
+                    amount,
+                    price
+                });
+            }
+            return offers;
+        }
+
+        function refreshMarket(manual){
+            if(manual){
+                if(gameState.diamonds < 1){ toast('Necesitas 1 💎 para renovar el mercado','error'); return; }
+                gameState.diamonds -= 1;
+            }
+            gameState.marketOffers = generateMarketOffers();
+            gameState.marketNextRefresh = Date.now() + MARKET_REFRESH_MS;
+            playSound('unlock');
+            if(manual) toast('Ofertas del mercado renovadas','success');
+            renderMarket();
+            updateUI();
+        }
+
+        function checkMarketRefresh(){
+            if(!gameState.marketOffers || gameState.marketOffers.length===0 || Date.now()>gameState.marketNextRefresh){
+                gameState.marketOffers = generateMarketOffers();
+                gameState.marketNextRefresh = Date.now() + MARKET_REFRESH_MS;
+            }
+        }
+
+        function acceptMarketOffer(offerId){
+            const o = gameState.marketOffers.find(x=>x.id===offerId);
+            if(!o) return;
+            const g = GOODS[o.goodKey];
+            if(o.type==='buy'){
+                if(gameState.coins < o.price){ toast('Monedas insuficientes','error'); playSound('error'); return; }
+                gameState.coins -= o.price;
+                gameState.inventoryGoods[o.goodKey] = (gameState.inventoryGoods[o.goodKey]||0) + o.amount;
+                toast(`Compraste ${o.amount} ${g.name} por ${o.price}🪙`,'success');
+            } else {
+                if((gameState.inventoryGoods[o.goodKey]||0) < o.amount){ toast(`No tienes suficientes ${g.name}`,'error'); playSound('error'); return; }
+                gameState.inventoryGoods[o.goodKey] -= o.amount;
+                gameState.coins += o.price;
+                toast(`Vendiste ${o.amount} ${g.name} por ${o.price}🪙`,'success');
+            }
+            gameState.marketTrades++;
+            addXP(15);
+            playSound('coin');
+            gameState.marketOffers = gameState.marketOffers.filter(x=>x.id!==offerId);
+            renderMarket();
+            updateUI();
+            checkAchievements();
+        }
+
+        function renderMarket(){
+            checkMarketRefresh();
+            const container = document.getElementById('market-grid');
+            if(!container) return;
+            container.innerHTML='';
+
+            document.getElementById('market-count').textContent = gameState.marketOffers.length;
+            document.getElementById('market-trades').textContent = gameState.marketTrades||0;
+            document.getElementById('market-coins').textContent = gameState.coins.toLocaleString('es-ES');
+            document.getElementById('market-diamonds').textContent = gameState.diamonds;
+
+            if(gameState.marketOffers.length===0){
+                container.innerHTML = `<div class="col-span-full text-center p-8 text-slate-400 italic">
+                    <i class="fa-solid fa-store text-4xl mb-3 block opacity-40"></i>
+                    No hay ofertas disponibles. Pulsa "Renovar ofertas" para generar nuevas.
+                </div>`;
+                return;
+            }
+
+            gameState.marketOffers.forEach(o=>{
+                const g = GOODS[o.goodKey];
+                const canAccept = o.type==='buy'
+                    ? gameState.coins >= o.price
+                    : (gameState.inventoryGoods[o.goodKey]||0) >= o.amount;
+                const card = document.createElement('div');
+                card.className = 'market-card p-5 rounded-2xl flex flex-col';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-slate-950 rounded-xl ${o.type==='buy'?'text-emerald-400':'text-amber-400'} text-2xl border border-slate-800">
+                                <i class="fa-solid ${g.icon}"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-100">${g.name}</h4>
+                                <span class="text-[10px] text-slate-400">${g.era}</span>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-1 rounded-full ${o.type==='buy'?'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40':'bg-amber-500/20 text-amber-300 border border-amber-500/40'}">
+                            ${o.type==='buy'?'COMPRAR':'VENDER'}
+                        </span>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-3 space-y-1.5">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Cantidad:</span>
+                            <span class="font-bold text-slate-200">${o.amount} ${g.name}</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">${o.type==='buy'?'Coste':'Pago'}:</span>
+                            <span class="font-bold ${o.type==='buy'?'text-red-300':'text-emerald-300'}">${o.price} 🪙</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Tu stock:</span>
+                            <span class="font-bold text-cyan-300">${gameState.inventoryGoods[o.goodKey]||0}</span>
+                        </div>
+                    </div>
+                    <button onclick="acceptMarketOffer('${o.id}')" ${!canAccept?'disabled':''} class="mt-auto w-full py-2.5 rounded-xl font-bold text-xs transition ${canAccept? (o.type==='buy'?'bg-emerald-600 hover:bg-emerald-500 text-white shadow':'bg-amber-600 hover:bg-amber-500 text-slate-950 shadow') :'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+                        ${!canAccept ? (o.type==='buy'?'Fondos insuficientes':'Bienes insuficientes') : (o.type==='buy'?'💰 Comprar':'📦 Vender')}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        /* AUDIO */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type){
+            if(!audioCtx) return;
+            try{
+                const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                const t=audioCtx.currentTime;
+                if(type==='coin'){
+                    osc.frequency.setValueAtTime(587.33,t);
+                    osc.frequency.exponentialRampToValueAtTime(880,t+0.15);
+                    gain.gain.setValueAtTime(0.2,t);
+                    gain.gain.exponentialRampToValueAtTime(0.01,t+0.15);
+                    osc.start();osc.stop(t+0.15);
+                } else if(type==='build'){
+                    osc.type='triangle';
+                    osc.frequency.setValueAtTime(150,t);
+                    osc.frequency.exponentialRampToValueAtTime(300,t+0.2);
+                    gain.gain.setValueAtTime(0.3,t);
+                    gain.gain.exponentialRampToValueAtTime(0.01,t+0.2);
+                    osc.start();osc.stop(t+0.2);
+                } else if(type==='unlock'){
+                    osc.type='sine';
+                    osc.frequency.setValueAtTime(440,t);
+                    osc.frequency.setValueAtTime(554.37,t+0.1);
+                    osc.frequency.setValueAtTime(659.25,t+0.2);
+                    gain.gain.setValueAtTime(0.25,t);
+                    gain.gain.exponentialRampToValueAtTime(0.01,t+0.4);
+                    osc.start();osc.stop(t+0.4);
+                } else if(type==='error'){
+                    osc.type='sawtooth';
+                    osc.frequency.setValueAtTime(220,t);
+                    osc.frequency.exponentialRampToValueAtTime(110,t+0.2);
+                    gain.gain.setValueAtTime(0.2,t);
+                    gain.gain.exponentialRampToValueAtTime(0.01,t+0.2);
+                    osc.start();osc.stop(t+0.2);
+                }
+            }catch(e){}
+        }
+
+        /* TOASTS */
+        function toast(message, type='info', duration=3500){
+            const c = document.getElementById('toast-container');
+            const colors = {
+                info:'border-cyan-500/60 bg-cyan-950/80 text-cyan-100',
+                success:'border-emerald-500/60 bg-emerald-950/80 text-emerald-100',
+                error:'border-red-500/60 bg-red-950/80 text-red-100',
+                warn:'border-amber-500/60 bg-amber-950/80 text-amber-100',
+                gold:'border-amber-400/70 bg-gradient-to-r from-amber-900/90 to-pink-900/80 text-amber-100'
+            };
+            const icons = {
+                info:'fa-circle-info',success:'fa-circle-check',error:'fa-triangle-exclamation',
+                warn:'fa-triangle-exclamation',gold:'fa-trophy'
+            };
+            const el = document.createElement('div');
+            el.className = `toast pointer-events-auto ${colors[type]||colors.info} border-2 rounded-2xl px-4 py-3 shadow-2xl backdrop-blur-md flex items-center gap-3 min-w-[280px] max-w-md`;
+            el.innerHTML = `<i class="fa-solid ${icons[type]||icons.info} text-lg"></i><span class="text-sm font-semibold flex-1">${message}</span>`;
+            c.appendChild(el);
+            setTimeout(()=>el.remove(),duration+400);
+        }
+
+        /* ============ UI: TABS ============ */
+        function switchTab(tabId){
+            document.querySelectorAll('main > section').forEach(sec=>sec.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(btn=>{
+                btn.classList.remove('bg-amber-600','text-white');
+                btn.classList.add('bg-slate-800','text-slate-300');
+            });
+            const sec=document.getElementById(`view-${tabId}`);
+            if(sec) sec.classList.remove('hidden');
+            const btn=document.getElementById(`tab-${tabId}`);
+            if(btn){btn.classList.remove('bg-slate-800','text-slate-300');btn.classList.add('bg-amber-600','text-white');}
+
+            if(tabId==='tech') renderTechTree();
+            if(tabId==='map') renderCampaignMap();
+            if(tabId==='inventory') renderInventory();
+            if(tabId==='army') renderArmyView();
+            if(tabId==='heroes') renderHeroes();
+            if(tabId==='wonders') renderWonders();
+            if(tabId==='missions') renderMissions();
+            if(tabId==='market') renderMarket();
+            if(tabId==='achievements') renderAchievements();
+        }
+
+        /* ============================================================
+           CIUDAD — TABLERO 100 x 100 OPTIMIZADO
+           ============================================================ */
+        let cellElements = new Array(GRID_TOTAL).fill(null);
+        let selectedCellForBuild = null;
+        let panMoved = false;
+
+        const ZOOM_STEPS = [12, 16, 20, 26, 32, 40, 50, 64];
+        let zoomIdx = 3;
+
+        function applyZoom(){
+            const cs = ZOOM_STEPS[zoomIdx];
+            const grid = document.getElementById('city-grid');
+            if(!grid) return;
+            grid.style.setProperty('--cs', cs + 'px');
+            grid.classList.toggle('show-labels', cs >= 40);
+            const lbl = document.getElementById('zoom-label');
+            if(lbl) lbl.textContent = cs + 'px';
+        }
+
+        function zoomCity(dir){
+            zoomIdx = Math.max(0, Math.min(ZOOM_STEPS.length - 1, zoomIdx + dir));
+            applyZoom();
+        }
+
+        function centerCityView(){
+            const scroller = document.getElementById('city-scroller');
+            const grid = document.getElementById('city-grid');
+            if(!scroller || !grid) return;
+            scroller.scrollLeft = Math.max(0, (grid.offsetWidth - scroller.clientWidth) / 2);
+            scroller.scrollTop = Math.max(0, (grid.offsetHeight - scroller.clientHeight) / 2);
+        }
+
+        function scrollCellIntoView(idx){
+            const el = cellElements[idx];
+            const scroller = document.getElementById('city-scroller');
+            if(!el || !scroller) return;
+            const targetLeft = el.offsetLeft + el.offsetWidth/2 - scroller.clientWidth/2;
+            const targetTop  = el.offsetTop  + el.offsetHeight/2 - scroller.clientHeight/2;
+            scroller.scrollLeft = Math.max(0, targetLeft);
+            scroller.scrollTop  = Math.max(0, targetTop);
+        }
+
+        /* --- Construcción del tablero (una sola vez) --- */
+        function initCityGrid(){
+            const grid = document.getElementById('city-grid');
+            if(!grid) return;
+
+            // Si ya está construido y con el tamaño correcto, solo refrescar celdas
+            if(grid.childElementCount === GRID_TOTAL && cellElements[0]){
+                refreshAllCells();
+                recalculateStats();
+                updateUI();
+                return;
+            }
+
+            grid.innerHTML = '';
+            cellElements = new Array(GRID_TOTAL).fill(null);
+
+            const frag = document.createDocumentFragment();
+            for(let i = 0; i < GRID_TOTAL; i++){
+                const el = document.createElement('div');
+                el.className = 'grid-cell empty';
+                el.dataset.index = i;
+                el.dataset.sig = 'empty';
+                frag.appendChild(el);
+                cellElements[i] = el;
+            }
+            grid.appendChild(frag);
+
+            applyZoom();
+            refreshAllCells();
+            recalculateStats();
+            updateUI();
+        }
+
+        /* --- Render de una sola celda --- */
+        function renderCell(i){
+            const el = cellElements[i];
+            if(!el) return;
+            const cell = gameState.cityGrid[i];
+
+            if(!cell){
+                if(el.dataset.sig !== 'empty'){
+                    el.className = 'grid-cell empty';
+                    el.innerHTML = '';
+                    el.dataset.sig = 'empty';
+                    el.removeAttribute('title');
+                }
+                return;
+            }
+
+            const b = BUILDINGS_CATALOG[cell.buildingId];
+            if(!b) return;
+            const level = cell.level || 1;
+            const ready = !!cell.ready;
+            const producing = !!cell.producing;
+            const sig = `${cell.buildingId}|${level}|${ready?1:0}|${producing?1:0}`;
+
+            if(el.dataset.sig === sig){
+                updateCellProgress(i);
+                return;
+            }
+            el.dataset.sig = sig;
+
+            let colorClass = 'text-amber-400';
+            if(b.type === 'goods') colorClass = 'text-emerald-400';
+            else if(b.type === 'military') colorClass = 'text-red-400';
+            else if(b.type === 'cultural') colorClass = 'text-blue-400';
+
+            const showBar = !ready && (b.type === 'residential' || (b.type === 'goods' && producing));
+
+            el.className = `grid-cell filled t-${b.type}`;
+            el.title = `${b.name} · Nivel ${level}`;
+            el.innerHTML =
+                (ready ? '<div class="ready-badge">!</div>' : '') +
+                `<i class="fa-solid ${b.icon} cell-icon ${colorClass}"></i>` +
+                `<span class="cell-name">${b.name}</span>` +
+                `<div class="level-badge">N${level}</div>` +
+                (showBar ? '<div class="progress-bar" style="width:0%"></div>' : '');
+
+            updateCellProgress(i);
+        }
+
+        function updateCellProgress(i){
+            const el = cellElements[i];
+            if(!el) return;
+            const bar = el.querySelector('.progress-bar');
+            if(!bar) return;
+            const cell = gameState.cityGrid[i];
+            if(!cell) return;
+            const b = BUILDINGS_CATALOG[cell.buildingId];
+            const interval = getEffectiveInterval(b);
+            const pct = Math.min(100, ((cell.timer || 0) / interval) * 100);
+            bar.style.width = pct + '%';
+        }
+
+        function refreshAllCells(){
+            for(let i = 0; i < GRID_TOTAL; i++) renderCell(i);
+        }
+
+        /* --- Búsqueda de hueco libre (espiral desde el centro) --- */
+        function findFreeSlot(preferIdx){
+            const grid = gameState.cityGrid;
+            if(typeof preferIdx === 'number' && preferIdx >= 0 && preferIdx < GRID_TOTAL && grid[preferIdx] === null){
+                return preferIdx;
+            }
+            const maxR = Math.max(GRID_W, GRID_H);
+            const tryCell = (x, y) => {
+                if(x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return -1;
+                const i = y * GRID_W + x;
+                return grid[i] === null ? i : -1;
+            };
+            for(let r = 0; r <= maxR; r++){
+                if(r === 0){
+                    const c = tryCell(CENTER_X, CENTER_Y);
+                    if(c !== -1) return c;
+                    continue;
+                }
+                for(let d = -r; d <= r; d++){
+                    let c;
+                    c = tryCell(CENTER_X + d, CENTER_Y - r); if(c !== -1) return c;
+                    c = tryCell(CENTER_X + d, CENTER_Y + r); if(c !== -1) return c;
+                    c = tryCell(CENTER_X - r, CENTER_Y + d); if(c !== -1) return c;
+                    c = tryCell(CENTER_X + r, CENTER_Y + d); if(c !== -1) return c;
+                }
+            }
+            return -1;
+        }
+
+        function getEffectiveInterval(bData){
+            let interval = bData.yieldInterval || 15;
+            const wonder = gameState.wonders.map(id=>WONDERS[id]).find(w=>w && w.effectType==='speedBoost');
+            if(wonder) interval = Math.max(2, Math.floor(interval*(1-wonder.effectValue)));
+            return interval;
+        }
+
+        function handleCellClick(index){
+            if(panMoved) return;
+            const cell = gameState.cityGrid[index];
+            if(cell){
+                showBuildingInfo(index);
+            } else {
+                selectedCellForBuild = index;
+                openBuildMenu();
+            }
+        }
+
+        /* --- Modal de información de edificio --- */
+        function showBuildingInfo(index){
+            const cell=gameState.cityGrid[index];
+            if(!cell) return;
+            const b=BUILDINGS_CATALOG[cell.buildingId];
+            const level=cell.level||1;
+            const multiplier=1+(level-1)*0.5;
+            const isWonder=gameState.wonders.includes(b.id);
+
+            const coinBonus=gameState.wonders.map(id=>WONDERS[id]).filter(w=>w&&w.effectType==='coinBoost').reduce((a,w)=>a+w.effectValue,0);
+            const goodsBonus=gameState.wonders.map(id=>WONDERS[id]).filter(w=>w&&w.effectType==='goodsBoost').reduce((a,w)=>a+w.effectValue,0);
+            const allBonus=gameState.wonders.map(id=>WONDERS[id]).filter(w=>w&&w.effectType==='allBoost').reduce((a,w)=>a+w.effectValue,0);
+            const empireBonus = getEmpireProductionBonus();
+
+            let currentYield=0, currentInterval=b.yieldInterval;
+            if(b.produces==='coins'){
+                currentYield=Math.floor(b.yieldAmount*multiplier*(1+coinBonus+allBonus+empireBonus));
+            } else if(b.type==='goods'){
+                currentYield=Math.floor(b.yieldGoodAmount*multiplier*(1+goodsBonus+allBonus+empireBonus));
+            }
+            currentInterval=getEffectiveInterval(b);
+
+            const upgradeCostCoins=Math.floor(b.costCoins*(1+level*0.8));
+            const canUpgrade=level<5 && gameState.coins>=upgradeCostCoins;
+
+            let actionHTML='';
+            if(b.type==='residential'){
+                if(cell.ready){
+                    actionHTML=`<button onclick="collectBuildingYield(${index});closeInfoModal();" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm rounded-xl">¡Recolectar ${currentYield} monedas!</button>`;
+                } else {
+                    const pct=Math.min(100,(cell.timer/currentInterval)*100);
+                    actionHTML=`<div class="w-full bg-slate-800 rounded-xl p-3">
+                        <div class="text-xs text-slate-400 mb-1">Produciendo... ${Math.floor(cell.timer)}/${currentInterval}s</div>
+                        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-amber-500 to-pink-500" style="width:${pct}%"></div></div>
+                    </div>`;
+                }
+            } else if(b.type==='goods'){
+                if(cell.ready){
+                    actionHTML=`<button onclick="collectBuildingYield(${index});closeInfoModal();" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm rounded-xl">¡Recolectar ${currentYield} ${GOODS[b.goodType].name}!</button>`;
+                } else if(cell.producing){
+                    const pct=Math.min(100,(cell.timer/currentInterval)*100);
+                    actionHTML=`<div class="w-full bg-slate-800 rounded-xl p-3">
+                        <div class="text-xs text-slate-400 mb-1">Produciendo ${GOODS[b.goodType].name}... ${Math.floor(cell.timer)}/${currentInterval}s</div>
+                        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-500 to-cyan-500" style="width:${pct}%"></div></div>
+                    </div>`;
+                } else {
+                    actionHTML=`<button onclick="startGoodsProduction(${index});closeInfoModal();" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm rounded-xl">Producir ${GOODS[b.goodType].name} (${b.produceCostCoins} monedas)</button>`;
+                }
+            } else if(b.type==='military'){
+                actionHTML=`<button onclick="switchTab('army');closeInfoModal();" class="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-sm rounded-xl">Ir a reclutar ${UNITS[b.unitType].name}</button>`;
+            }
+
+            const upgradeHTML = level<5
+                ? `<button onclick="upgradeBuilding(${index})" ${canUpgrade?'':'disabled'} class="w-full py-2.5 ${canUpgrade?'bg-gradient-to-r from-amber-500 to-pink-500 hover:from-amber-400 text-slate-950':'bg-slate-800 text-slate-500 cursor-not-allowed'} font-bold text-sm rounded-xl">
+                    ⬆️ Mejorar a Nivel ${level+1} (${upgradeCostCoins} monedas) — ×${((1+(level)*0.5)).toFixed(1)} producción
+                </button>`
+                : `<div class="w-full py-2.5 bg-purple-900/60 text-purple-200 font-bold text-sm rounded-xl text-center border border-purple-500/40">⭐ Nivel Máximo Alcanzado (5)</div>`;
+
+            document.getElementById('modal-info-content').innerHTML = `
+                <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-slate-950 rounded-xl text-amber-400 text-2xl border border-slate-800"><i class="fa-solid ${b.icon}"></i></div>
+                        <div>
+                            <h3 class="font-cinzel text-lg font-bold text-amber-300">${b.name}</h3>
+                            <span class="text-xs text-slate-400">${b.era} · Nivel ${level}/5${isWonder?' · ⭐ Maravilla':''}</span>
+                        </div>
+                    </div>
+                    <button onclick="closeInfoModal()" class="text-slate-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-5 space-y-3">
+                    <div class="text-[11px] text-slate-500 text-center">Casilla (${index % GRID_W}, ${Math.floor(index / GRID_W)})</div>
+                    ${empireBonus>0?`<div class="text-[11px] text-yellow-300/80 text-center bg-yellow-950/30 rounded-lg py-1 border border-yellow-500/20">⭐ Bonus de Imperio: +${Math.round(empireBonus*100)}% producción</div>`:''}
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        ${b.type==='residential'?`
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div class="text-slate-400">Producción</div>
+                                <div class="font-bold text-amber-400 text-base">${currentYield} <i class="fa-solid fa-coins"></i></div>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div class="text-slate-400">Intervalo</div>
+                                <div class="font-bold text-amber-200 text-base">${currentInterval}s</div>
+                            </div>
+                        `:''}
+                        ${b.type==='goods'?`
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div class="text-slate-400">Produce</div>
+                                <div class="font-bold text-emerald-400 text-base">${currentYield} ${GOODS[b.goodType].name}</div>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div class="text-slate-400">Intervalo</div>
+                                <div class="font-bold text-emerald-200 text-base">${currentInterval}s</div>
+                            </div>
+                        `:''}
+                        ${b.type==='military'?`
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 col-span-2">
+                                <div class="text-slate-400">Unidad</div>
+                                <div class="font-bold text-red-400 text-base"><i class="fa-solid ${UNITS[b.unitType].icon}"></i> ${UNITS[b.unitType].name}</div>
+                            </div>
+                        `:''}
+                        ${b.type==='cultural'?`
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 col-span-2">
+                                <div class="text-slate-400">Felicidad</div>
+                                <div class="font-bold text-blue-400 text-base">+${b.happinessProvided} <i class="fa-solid fa-face-smile"></i></div>
+                            </div>
+                        `:''}
+                        ${b.popProvided?`<div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><div class="text-slate-400">Población</div><div class="font-bold text-blue-400 text-base">+${b.popProvided}</div></div>`:''}
+                        ${b.popNeeded?`<div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><div class="text-slate-400">Población req.</div><div class="font-bold text-red-400 text-base">${b.popNeeded}</div></div>`:''}
+                        ${b.happinessCost?`<div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><div class="text-slate-400">Felicidad</div><div class="font-bold text-red-400 text-base">-${b.happinessCost}</div></div>`:''}
+                    </div>
+                    <div class="space-y-2 pt-1">
+                        ${actionHTML}
+                        ${upgradeHTML}
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-info').classList.remove('hidden');
+        }
+
+        function closeInfoModal(){
+            document.getElementById('modal-info').classList.add('hidden');
+        }
+
+        function upgradeBuilding(index){
+            const cell=gameState.cityGrid[index];
+            if(!cell) return;
+            const b=BUILDINGS_CATALOG[cell.buildingId];
+            const level=cell.level||1;
+            if(level>=5){toast('Nivel máximo alcanzado','warn');return;}
+            const cost=Math.floor(b.costCoins*(1+level*0.8));
+            if(gameState.coins<cost){toast('Monedas insuficientes','error');playSound('error');return;}
+            gameState.coins-=cost;
+            cell.level=level+1;
+            playSound('build');
+            toast(`${b.name} mejorado a nivel ${cell.level}`,'success');
+            addXP(25);
+            trackMission('upgradeBuildings',1);
+            closeInfoModal();
+            renderCell(index);
+            recalculateStats();
+            updateUI();
+        }
+
+        function openBuildMenu(){
+            document.getElementById('modal-build').classList.remove('hidden');
+            const firstBtn=document.querySelector('.build-cat-btn');
+            filterBuildCategory('residential',firstBtn);
+        }
+        function closeBuildMenu(){
+            document.getElementById('modal-build').classList.add('hidden');
+            selectedCellForBuild=null;
+        }
+
+        let currentBuildCategory='residential';
+        function filterBuildCategory(category,btnEl){
+            currentBuildCategory=category;
+            document.querySelectorAll('.build-cat-btn').forEach(btn=>{
+                btn.classList.remove('text-amber-400','border-b-2','border-amber-500');
+                btn.classList.add('text-slate-400');
+            });
+            if(btnEl){btnEl.classList.add('text-amber-400','border-b-2','border-amber-500');}
+            else{
+                const btns=document.querySelectorAll('.build-cat-btn');
+                btns.forEach(b=>{if(b.textContent.trim().toLowerCase().includes(category.slice(0,4))){b.classList.add('text-amber-400','border-b-2','border-amber-500');}});
+            }
+
+            const container=document.getElementById('build-options-list');
+            container.innerHTML='';
+            const popAvailable=gameState.populationTotal-gameState.populationUsed;
+            const onlyAvail=document.getElementById('filter-available').checked;
+
+            const buildings=Object.values(BUILDINGS_CATALOG).filter(b=>b.type===category);
+
+            buildings.forEach(b=>{
+                const isUnlocked=gameState.unlockedBuildings.includes(b.id);
+                if(onlyAvail && !isUnlocked) return;
+
+                let canAffordCoins=gameState.coins>=b.costCoins;
+                let canAffordPop=!b.popNeeded||popAvailable>=b.popNeeded;
+                let canAffordGoods=true;
+                let reqGoodsText='';
+                if(b.reqGoodsToBuild){
+                    Object.keys(b.reqGoodsToBuild).forEach(gk=>{
+                        const req=b.reqGoodsToBuild[gk];const cur=gameState.inventoryGoods[gk]||0;
+                        if(cur<req) canAffordGoods=false;
+                        reqGoodsText+=`<div class="${cur>=req?'text-emerald-400':'text-red-400'}">${GOODS[gk].name}: ${cur}/${req}</div>`;
+                    });
+                }
+                const canAfford=canAffordCoins&&canAffordPop&&canAffordGoods;
+
+                const card=document.createElement('div');
+                card.className=`p-3.5 rounded-2xl border flex flex-col justify-between ${isUnlocked?'bg-slate-800/90 border-slate-700':'bg-slate-950/60 border-slate-800 opacity-60'}`;
+
+                let extraInfo='';
+                if(b.type==='goods') extraInfo=`<div class="text-emerald-300">Produce: ${GOODS[b.goodType].name} (${b.yieldGoodAmount})</div>`;
+                if(b.type==='military') extraInfo=`<div class="text-red-300">Entrena: ${UNITS[b.unitType].name}</div>`;
+
+                card.innerHTML=`
+                    <div>
+                        <div class="flex items-center space-x-3 mb-2">
+                            <div class="p-2.5 bg-slate-900 rounded-xl text-amber-400 border border-slate-800"><i class="fa-solid ${b.icon} text-lg"></i></div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-100">${b.name}</h4>
+                                <span class="text-[10px] text-amber-300/80 font-semibold">${b.era}</span>
+                            </div>
+                        </div>
+                        <div class="text-xs space-y-1 text-slate-300">
+                            <div>Coste: <span class="font-bold ${canAffordCoins?'text-amber-400':'text-red-400'}">${b.costCoins} Monedas</span></div>
+                            ${b.popProvided?`<div class="text-blue-300">+${b.popProvided} Población</div>`:''}
+                            ${b.popNeeded?`<div class="${canAffordPop?'text-blue-400':'text-red-400'}">Población: ${b.popNeeded}</div>`:''}
+                            ${b.happinessProvided?`<div class="text-emerald-300">+${b.happinessProvided} Felicidad</div>`:''}
+                            ${extraInfo}${reqGoodsText}
+                        </div>
+                    </div>
+                    <button onclick="buildBuilding('${b.id}')" ${!isUnlocked||!canAfford?'disabled':''} class="mt-3 w-full py-2 rounded-xl font-bold text-xs transition ${isUnlocked&&canAfford?'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow':'bg-slate-700 text-slate-400 cursor-not-allowed'}">
+                        ${!isUnlocked?'Bloqueado (Investigar)':'Construir'}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function buildBuilding(buildingId){
+            const bData=BUILDINGS_CATALOG[buildingId];
+            if(gameState.coins<bData.costCoins){toast('Monedas insuficientes','error');return;}
+            if(bData.popNeeded){
+                const popAvail=gameState.populationTotal-gameState.populationUsed;
+                if(popAvail<bData.popNeeded){toast(`Población insuficiente (necesitas ${bData.popNeeded})`,'error');return;}
+            }
+            if(bData.reqGoodsToBuild){
+                for(let gk in bData.reqGoodsToBuild){
+                    if((gameState.inventoryGoods[gk]||0)<bData.reqGoodsToBuild[gk]){toast('Bienes insuficientes','error');return;}
+                }
+                for(let gk in bData.reqGoodsToBuild){gameState.inventoryGoods[gk]-=bData.reqGoodsToBuild[gk];}
+            }
+
+            const targetIdx = findFreeSlot(selectedCellForBuild);
+            if(targetIdx === -1){toast('¡No hay espacio libre en el tablero!','error');return;}
+
+            gameState.coins-=bData.costCoins;
+            gameState.cityGrid[targetIdx]={buildingId,timer:0,ready:false,producing:false,level:1};
+            playSound('build');
+            toast(`${bData.name} construido`,'success');
+            addXP(15);
+            trackMission('buildBuildings',1);
+            closeBuildMenu();
+
+            renderCell(targetIdx);
+            recalculateStats();
+            updateUI();
+            scrollCellIntoView(targetIdx);
+            checkAchievements();
+        }
+
+        /* --- Bucle de producción (1 segundo) --- */
+        setInterval(()=>{
+            for(let i = 0; i < GRID_TOTAL; i++){
+                const cell = gameState.cityGrid[i];
+                if(!cell) continue;
+                const bData = BUILDINGS_CATALOG[cell.buildingId];
+                if(!bData) continue;
+                const interval = getEffectiveInterval(bData);
+
+                if(bData.type === 'residential' && !cell.ready){
+                    cell.timer = (cell.timer || 0) + 1;
+                    if(cell.timer >= interval){
+                        cell.ready = true; cell.timer = 0;
+                        renderCell(i);
+                    } else {
+                        updateCellProgress(i);
+                    }
+                } else if(bData.type === 'goods' && cell.producing && !cell.ready){
+                    cell.timer = (cell.timer || 0) + 1;
+                    if(cell.timer >= interval){
+                        cell.ready = true; cell.producing = false; cell.timer = 0;
+                        renderCell(i);
+                    } else {
+                        updateCellProgress(i);
+                    }
+                }
+            }
+
+            // Auto refresco del mercado
+            if(gameState.marketOffers && Date.now() > gameState.marketNextRefresh){
+                gameState.marketOffers = generateMarketOffers();
+                gameState.marketNextRefresh = Date.now() + MARKET_REFRESH_MS;
+                const mv = document.getElementById('view-market');
+                if(mv && !mv.classList.contains('hidden')) renderMarket();
+            }
+        }, 1000);
+
+        function collectBuildingYield(index){
+            const cell=gameState.cityGrid[index];
+            if(!cell||!cell.ready) return;
+            const bData=BUILDINGS_CATALOG[cell.buildingId];
+            const level=cell.level||1;
+            const mult=1+(level-1)*0.5;
+            const allBonus=gameState.wonders.map(id=>WONDERS[id]).filter(w=>w&&w.effectType==='allBoost').reduce((a,w)=>a+w.effectValue,0);
+            const empireBonus=getEmpireProductionBonus();
+            if(bData.produces==='coins'){
+                const coinBonus=gameState.wonders.map(id=>WONDERS[id]).filter(w=>w&&w.effectType==='coinBoost').reduce((a,w)=>a+w.effectValue,0);
+                const total=Math.floor(bData.yieldAmount*mult*(1+coinBonus+allBonus+empireBonus));
+                gameState.coins+=total;
+                playSound('coin');
+                trackMission('collectCoins', total);
+            } else if(bData.type==='goods'){
+                const goodsBonus=gameState.wonders.map(id=>WONDERS[id]).filter(w=>w&&w.effectType==='goodsBoost').reduce((a,w)=>a+w.effectValue,0);
+                const total=Math.floor(bData.yieldGoodAmount*mult*(1+goodsBonus+allBonus+empireBonus));
+                gameState.inventoryGoods[bData.goodType]=(gameState.inventoryGoods[bData.goodType]||0)+total;
+                playSound('unlock');
+                trackMission('produceGoods', total);
+            }
+            cell.ready=false;cell.timer=0;
+            addXP(5);
+            renderCell(index);
+            updateUI();
+            checkAchievements();
+        }
+
+        function startGoodsProduction(index){
+            const cell=gameState.cityGrid[index];
+            if(!cell) return;
+            const bData=BUILDINGS_CATALOG[cell.buildingId];
+            if(gameState.coins<bData.produceCostCoins){toast(`Necesitas ${bData.produceCostCoins} monedas`,'error');return;}
+            if(bData.reqGoodsToProduce){
+                for(let gk in bData.reqGoodsToProduce){
+                    if((gameState.inventoryGoods[gk]||0)<bData.reqGoodsToProduce[gk]){toast(`Requiere ${bData.reqGoodsToProduce[gk]} de ${GOODS[gk].name}`,'error');return;}
+                }
+                for(let gk in bData.reqGoodsToProduce){gameState.inventoryGoods[gk]-=bData.reqGoodsToProduce[gk];}
+            }
+            gameState.coins-=bData.produceCostCoins;
+            cell.producing=true;cell.ready=false;cell.timer=0;
+            renderCell(index);
+            updateUI();
+        }
+
+        function collectAllResources(){
+            let count=0;
+            for(let i = 0; i < GRID_TOTAL; i++){
+                const cell = gameState.cityGrid[i];
+                if(cell && cell.ready){ collectBuildingYield(i); count++; }
+            }
+            if(count>0) toast(`Recolectados ${count} edificios`,'success');
+            else toast('Nada para recolectar','info');
+        }
+
+        /* ============ TECH ============ */
+        function renderTechTree(){
+            const container=document.getElementById('tech-tree-container');
+            container.innerHTML='';
+            const progressEl=document.getElementById('tech-progress');
+            if(progressEl) progressEl.textContent=`${gameState.unlockedTechs.length} / ${TECH_TREE.length}`;
+
+            const erasTechs={};
+            TECH_TREE.forEach(t=>{if(!erasTechs[t.era]) erasTechs[t.era]=[]; erasTechs[t.era].push(t);});
+
+            Object.keys(erasTechs).forEach(eraName=>{
+                const sec=document.createElement('div');sec.className='space-y-4';
+                sec.innerHTML=`<h3 class="font-cinzel text-xl font-bold text-amber-300 border-b border-slate-800 pb-2">${eraName}</h3>`;
+                const grid=document.createElement('div');grid.className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5';
+
+                erasTechs[eraName].forEach(tech=>{
+                    const isUnlocked=gameState.unlockedTechs.includes(tech.id);
+                    const prereqsMet=tech.prereqs.every(p=>gameState.unlockedTechs.includes(p));
+                    const hasCoins=gameState.coins>=tech.reqCoins;
+                    let hasGoods=true,goodsListHtml='';
+                    if(tech.reqGoods){
+                        Object.keys(tech.reqGoods).forEach(gk=>{
+                            const needed=tech.reqGoods[gk];const cur=gameState.inventoryGoods[gk]||0;
+                            if(cur<needed) hasGoods=false;
+                            goodsListHtml+=`<div class="text-xs ${cur>=needed?'text-emerald-400':'text-red-400'}">${GOODS[gk].name}: ${cur}/${needed}</div>`;
+                        });
+                    }
+                    let hasUnits=true,unitsListHtml='';
+                    if(tech.reqUnits){
+                        Object.keys(tech.reqUnits).forEach(uType=>{
+                            const needed=tech.reqUnits[uType];
+                            const stack=gameState.army.find(a=>a.type===uType);
+                            const cur=stack?stack.count:0;
+                            if(cur<needed) hasUnits=false;
+                            unitsListHtml+=`<div class="text-xs ${cur>=needed?'text-emerald-400':'text-red-400'}">${UNITS[uType].name}: ${cur}/${needed}</div>`;
+                        });
+                    }
+                    const canUnlock=prereqsMet&&hasCoins&&hasGoods&&hasUnits&&!isUnlocked;
+
+                    const card=document.createElement('div');
+                    card.className=`p-5 rounded-2xl border flex flex-col justify-between ${isUnlocked?'bg-slate-900/90 border-amber-500/50 shadow-lg':prereqsMet?'bg-slate-900/60 border-slate-700':'bg-slate-950 border-slate-800 opacity-50'}`;
+
+                    card.innerHTML=`
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h4 class="font-bold text-base text-slate-100">${tech.name}</h4>
+                                    <span class="text-xs text-amber-400/80 font-semibold">${tech.era}</span>
+                                </div>
+                                ${isUnlocked?`<span class="bg-amber-500/20 text-amber-300 text-xs px-2.5 py-1 rounded-full border border-amber-500/40 font-bold"><i class="fa-solid fa-check mr-1"></i>OK</span>`:''}
+                            </div>
+                            <div class="mb-4">
+                                <span class="text-[11px] text-slate-400 uppercase font-semibold">Desbloquea:</span>
+                                <div class="flex flex-wrap gap-1.5 mt-1">
+                                    ${tech.unlocks.map(bId=>`<span class="bg-slate-800 text-amber-200 text-xs px-2.5 py-1 rounded-lg border border-slate-700">${BUILDINGS_CATALOG[bId]?BUILDINGS_CATALOG[bId].name:bId}</span>`).join('')}
+                                </div>
+                            </div>
+                            ${!isUnlocked?`<div class="space-y-1 bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4 text-xs">
+                                <div class="font-bold text-slate-300 mb-1">Requisitos:</div>
+                                <div class="${hasCoins?'text-emerald-400':'text-red-400'}">Monedas: ${gameState.coins}/${tech.reqCoins}</div>
+                                ${goodsListHtml}${unitsListHtml}
+                            </div>`:''}
+                        </div>
+                        ${!isUnlocked?`<button onclick="unlockTech('${tech.id}')" ${!canUnlock?'disabled':''} class="w-full py-2.5 rounded-xl font-bold text-xs transition ${canUnlock?'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg glow-gold':'bg-slate-800 text-slate-500 cursor-not-allowed'}">${!prereqsMet?'Requiere tecnologías previas':'Investigar'}</button>`:''}
+                    `;
+                    grid.appendChild(card);
+                });
+                sec.appendChild(grid);
+                container.appendChild(sec);
+            });
+        }
+
+        function unlockTech(techId){
+            const tech=TECH_TREE.find(t=>t.id===techId);
+            if(!tech) return;
+            gameState.coins-=tech.reqCoins;
+            if(tech.reqGoods){
+                Object.keys(tech.reqGoods).forEach(gk=>{gameState.inventoryGoods[gk]-=tech.reqGoods[gk];});
+            }
+            gameState.unlockedTechs.push(techId);
+            tech.unlocks.forEach(bId=>{
+                if(!gameState.unlockedBuildings.includes(bId)){
+                    gameState.unlockedBuildings.push(bId);
+                    if(BUILDINGS_CATALOG[bId]) BUILDINGS_CATALOG[bId].unlocked=true;
+                }
+            });
+            if(tech.era!==gameState.era) gameState.era=tech.era;
+            playSound('unlock');
+            toast(`¡Tecnología investigada: ${tech.name}!`,'success');
+            addXP(100);
+            trackMission('researchTech',1);
+            renderTechTree();
+            updateUI();
+            checkAchievements();
+        }
+
+        /* ============ MAPA ============ */
+        function renderCampaignMap(){
+            const container=document.getElementById('campaign-provinces-grid');
+            container.innerHTML='';
+            const conquered=gameState.provinces.filter(p=>p.conquered).length;
+            const progressEl=document.getElementById('province-progress');
+            if(progressEl) progressEl.textContent=`${conquered} / ${gameState.provinces.length}`;
+
+            gameState.provinces.forEach(p=>{
+                const totalPlayerAtk=getTotalArmyAtk();
+                const card=document.createElement('div');
+                card.className=`p-5 rounded-2xl border flex flex-col justify-between ${p.conquered?'bg-emerald-950/20 border-emerald-800/50':'bg-slate-900 border-slate-800'}`;
+
+                let rewardText='';
+                if(p.rewardCoins) rewardText+=`${p.rewardCoins} 🪙 `;
+                if(p.rewardDiamonds) rewardText+=`${p.rewardDiamonds} 💎 `;
+                if(p.rewardGoods) Object.keys(p.rewardGoods).forEach(gk=>rewardText+=`${p.rewardGoods[gk]} ${GOODS[gk].name} `);
+
+                card.innerHTML=`
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <h4 class="font-bold text-base text-amber-300">${p.name}</h4>
+                            <span class="text-xs text-slate-400 font-semibold">${p.era}</span>
+                        </div>
+                        <div class="space-y-2 text-xs text-slate-300 mb-4">
+                            <div class="flex justify-between"><span>Ataque:</span><span class="font-bold text-red-400">${p.enemyAtk}</span></div>
+                            <div class="flex justify-between"><span>Defensa:</span><span class="font-bold text-blue-400">${p.enemyDef}</span></div>
+                            <div class="p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-amber-200">${rewardText}</div>
+                        </div>
+                    </div>
+                    ${p.conquered?`<div class="py-2.5 text-center text-xs font-bold text-emerald-400 bg-emerald-950/60 rounded-xl border border-emerald-800/50"><i class="fa-solid fa-flag mr-1"></i>Conquistada</div>`:
+                    `<button onclick="attackProvince(${p.id})" class="w-full py-2.5 bg-red-800 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2"><i class="fa-solid fa-swords"></i> Atacar (Tu Atk: ${Math.round(totalPlayerAtk)})</button>`}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function getTotalArmyAtk(){
+            let base=gameState.army.reduce((t,s)=>t+(UNITS[s.type].atk*s.count),0);
+            let bonus=0;
+            const activeHero=gameState.activeHero?HEROES[gameState.activeHero]:null;
+            if(activeHero) bonus+=activeHero.atkBonus;
+            gameState.wonders.forEach(id=>{
+                const w=WONDERS[id];
+                if(w.effectType==='armyAtk') bonus+=w.effectValue;
+                if(w.effectType==='allBoost') bonus+=w.effectValue;
+            });
+            return base*(1+bonus);
+        }
+
+        function attackProvince(provinceId){
+            const p=gameState.provinces.find(pr=>pr.id===provinceId);
+            const playerAtk=getTotalArmyAtk();
+            if(playerAtk>=p.enemyAtk){
+                p.conquered=true;
+                if(p.rewardCoins) gameState.coins+=p.rewardCoins;
+                if(p.rewardDiamonds) gameState.diamonds+=p.rewardDiamonds;
+                if(p.rewardGoods){
+                    Object.keys(p.rewardGoods).forEach(gk=>{gameState.inventoryGoods[gk]=(gameState.inventoryGoods[gk]||0)+p.rewardGoods[gk];});
+                }
+                playSound('unlock');
+                toast(`¡Victoria en ${p.name}!`,'gold');
+                addXP(50);
+                trackMission('conquerProvince',1);
+            } else {
+                playSound('error');
+                toast(`Derrota: Tu Atk ${Math.round(playerAtk)} < ${p.enemyAtk}`,'error');
+            }
+            renderCampaignMap();
+            updateUI();
+            checkAchievements();
+        }
+
+        /* ============ INVENTARIO ============ */
+        function renderInventory(){
+            const container=document.getElementById('inventory-goods-list');
+            container.innerHTML='';
+            Object.keys(GOODS).forEach(gKey=>{
+                const g=GOODS[gKey];const count=gameState.inventoryGoods[gKey]||0;
+                const card=document.createElement('div');
+                card.className=`bg-slate-900 border p-4 rounded-2xl flex items-center space-x-3 ${count>0?'border-amber-700/40':'border-slate-800'}`;
+                card.innerHTML=`
+                    <div class="p-3 bg-slate-950 rounded-xl ${count>0?'text-amber-400':'text-slate-600'} text-xl border border-slate-800"><i class="fa-solid ${g.icon}"></i></div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-semibold">${g.era}</div>
+                        <div class="font-bold text-sm text-slate-200">${g.name}</div>
+                        <div class="text-base font-bold ${count>0?'text-amber-400':'text-slate-500'}">${count}</div>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        /* ============ EJÉRCITO ============ */
+        function renderArmyView(){
+            const container=document.getElementById('army-list');
+            container.innerHTML='';
+            let baseAtk=0,baseDef=0,totalUnits=0;
+
+            if(gameState.army.length===0){
+                container.innerHTML=`<div class="text-sm text-slate-500 italic">Aún no has reclutado tropas.</div>`;
+            }
+            gameState.army.forEach(stack=>{
+                const u=UNITS[stack.type];
+                baseAtk+=u.atk*stack.count;
+                baseDef+=u.def*stack.count;
+                totalUnits+=stack.count;
+                const item=document.createElement('div');
+                item.className='flex justify-between items-center p-3 bg-slate-950 rounded-xl border border-slate-800';
+                item.innerHTML=`
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid ${u.icon} text-amber-400 text-lg"></i>
+                        <div><div class="font-bold text-sm">${u.name}</div><div class="text-xs text-slate-400">Atk: ${u.atk} | Def: ${u.def}</div></div>
+                    </div>
+                    <div class="text-lg font-bold text-amber-400">x${stack.count}</div>`;
+                container.appendChild(item);
+            });
+
+            const trainSec=document.createElement('div');
+            trainSec.className='mt-4 border-t border-slate-800 pt-3 space-y-2';
+            trainSec.innerHTML=`<h4 class="text-xs font-bold text-slate-400 uppercase">Reclutar Unidades:</h4>`;
+            Object.keys(UNITS).forEach(uType=>{
+                const u=UNITS[uType];
+                if(!gameState.unlockedBuildings.includes(u.unlockBuilding)) return;
+                let canAffordCoins=gameState.coins>=u.costCoins;
+                let canAffordGoods=true;let reqText='';
+                if(u.reqGoodsToTrain){
+                    Object.keys(u.reqGoodsToTrain).forEach(gk=>{
+                        const req=u.reqGoodsToTrain[gk];const cur=gameState.inventoryGoods[gk]||0;
+                        if(cur<req) canAffordGoods=false;
+                        reqText+=`, ${req} ${GOODS[gk].name}`;
+                    });
+                }
+                const canAfford=canAffordCoins&&canAffordGoods;
+                trainSec.innerHTML+=`<div class="flex justify-between items-center p-2.5 bg-slate-800/40 rounded-xl border border-slate-800">
+                    <span class="text-xs font-semibold"><i class="fa-solid ${u.icon} text-amber-400 mr-1"></i>${u.name} (${u.costCoins}🪙${reqText})</span>
+                    <button onclick="trainUnit('${uType}')" ${!canAfford?'disabled':''} class="px-3 py-1.5 text-xs font-bold rounded-lg transition ${canAfford?'bg-amber-500 hover:bg-amber-400 text-slate-950':'bg-slate-700 text-slate-500 cursor-not-allowed'}">Reclutar</button>
+                </div>`;
+            });
+            container.appendChild(trainSec);
+
+            let heroBonus=0;
+            const activeHero=gameState.activeHero?HEROES[gameState.activeHero]:null;
+            if(activeHero) heroBonus=activeHero.atkBonus;
+            gameState.wonders.forEach(id=>{const w=WONDERS[id];if(w.effectType==='armyAtk'||w.effectType==='allBoost') heroBonus+=w.effectValue;});
+
+            document.getElementById('army-base-atk').innerText=Math.round(baseAtk);
+            document.getElementById('army-base-def').innerText=Math.round(baseDef);
+            document.getElementById('army-hero-bonus').innerText=`+${Math.round(heroBonus*100)}%`;
+            document.getElementById('army-total-atk').innerText=Math.round(baseAtk*(1+heroBonus));
+            document.getElementById('army-total-units').innerText=totalUnits;
+        }
+
+        function trainUnit(unitType){
+            const u=UNITS[unitType];
+            if(!gameState.unlockedBuildings.includes(u.unlockBuilding)) return;
+            if(gameState.coins<u.costCoins){toast('Monedas insuficientes','error');return;}
+            if(u.reqGoodsToTrain){
+                for(let gk in u.reqGoodsToTrain){
+                    if((gameState.inventoryGoods[gk]||0)<u.reqGoodsToTrain[gk]){toast('Bienes insuficientes','error');return;}
+                }
+                for(let gk in u.reqGoodsToTrain){gameState.inventoryGoods[gk]-=u.reqGoodsToTrain[gk];}
+            }
+            gameState.coins-=u.costCoins;
+            const existing=gameState.army.find(a=>a.type===unitType);
+            if(existing) existing.count+=1;
+            else gameState.army.push({type:unitType,count:1});
+            playSound('build');
+            addXP(8);
+            trackMission('trainUnits',1);
+            renderArmyView();
+            updateUI();
+            checkAchievements();
+        }
+
+        /* ============ HÉROES ============ */
+        function renderHeroes(){
+            const container=document.getElementById('heroes-grid');
+            container.innerHTML='';
+            const countEl=document.getElementById('heroes-active-count');
+            if(countEl) countEl.textContent=gameState.heroes.length;
+
+            Object.values(HEROES).forEach(h=>{
+                const owned=gameState.heroes.includes(h.id);
+                const active=gameState.activeHero===h.id;
+                const canAfford=gameState.diamonds>=h.costDiamonds;
+                const card=document.createElement('div');
+                card.className=`hero-card p-5 rounded-2xl ${owned?'':'locked'} ${active?'ring-2 ring-purple-400 shadow-2xl':''} flex flex-col`;
+                card.innerHTML=`
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-slate-950 rounded-xl text-purple-300 text-2xl border border-purple-500/40"><i class="fa-solid ${h.icon}"></i></div>
+                            <div>
+                                <h4 class="font-bold text-base text-slate-100">${h.name}</h4>
+                                <span class="text-xs text-purple-300/80 font-semibold">${h.era}</span>
+                            </div>
+                        </div>
+                        ${active?`<span class="bg-purple-500/30 text-purple-200 text-[10px] px-2 py-1 rounded-full border border-purple-400/50 font-bold">ACTIVO</span>`:''}
+                    </div>
+                    <p class="text-xs text-slate-300 italic mb-3">${h.description}</p>
+                    <div class="flex gap-2 text-xs text-slate-400 mb-3">
+                        <span class="bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">⚔️ +${Math.round(h.atkBonus*100)}%</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">🛡️ +${Math.round(h.defBonus*100)}%</span>
+                    </div>
+                    <div class="mt-auto">
+                        ${!owned?`<button onclick="recruitHero('${h.id}')" ${!canAfford?'disabled':''} class="w-full py-2.5 rounded-xl font-bold text-xs ${canAfford?'bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 text-white shadow-lg':'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+                            <i class="fa-solid fa-gem"></i> Reclutar (${h.costDiamonds} 💎)
+                        </button>`:
+                        `<button onclick="setActiveHero('${h.id}')" ${active?'disabled':''} class="w-full py-2.5 rounded-xl font-bold text-xs ${active?'bg-purple-900/60 text-purple-300 cursor-not-allowed':'bg-purple-600 hover:bg-purple-500 text-white shadow'}">
+                            ${active?'Ya está activo':'Activar héroe'}
+                        </button>`}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function recruitHero(heroId){
+            const h=HEROES[heroId];
+            if(gameState.heroes.includes(heroId)) return;
+            if(gameState.diamonds<h.costDiamonds){toast('Diamantes insuficientes','error');return;}
+            gameState.diamonds-=h.costDiamonds;
+            gameState.heroes.push(heroId);
+            if(!gameState.activeHero) gameState.activeHero=heroId;
+            playSound('unlock');
+            toast(`¡Héroe reclutado: ${h.name}!`,'gold');
+            addXP(200);
+            renderHeroes();
+            updateUI();
+            checkAchievements();
+        }
+
+        function setActiveHero(heroId){
+            if(!gameState.heroes.includes(heroId)) return;
+            gameState.activeHero=heroId;
+            toast(`Héroe activo: ${HEROES[heroId].name}`,'success');
+            renderHeroes();
+        }
+
+        /* ============ MARAVILLAS ============ */
+        function renderWonders(){
+            const container=document.getElementById('wonders-grid');
+            container.innerHTML='';
+            const countEl=document.getElementById('wonders-built-count');
+            if(countEl) countEl.textContent=gameState.wonders.length;
+
+            Object.values(WONDERS).forEach(w=>{
+                const built=gameState.wonders.includes(w.id);
+                const canAffordCoins=gameState.coins>=w.costCoins;
+                let canAffordGoods=true;let goodsText='';
+                if(w.reqGoods){
+                    Object.keys(w.reqGoods).forEach(gk=>{
+                        const req=w.reqGoods[gk];const cur=gameState.inventoryGoods[gk]||0;
+                        if(cur<req) canAffordGoods=false;
+                        goodsText+=`<div class="${cur>=req?'text-emerald-400':'text-red-400'}">${GOODS[gk].name}: ${cur}/${req}</div>`;
+                    });
+                }
+                const canBuild=canAffordCoins&&canAffordGoods;
+
+                const card=document.createElement('div');
+                card.className=`wonder-card p-5 rounded-2xl ${built?'completed':''} flex flex-col`;
+                card.innerHTML=`
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-slate-950 rounded-xl text-amber-300 text-2xl border border-amber-500/40"><i class="fa-solid ${w.icon}"></i></div>
+                            <div>
+                                <h4 class="font-bold text-base text-amber-200">${w.name}</h4>
+                                <span class="text-xs text-amber-400/80 font-semibold">${w.era}</span>
+                            </div>
+                        </div>
+                        ${built?`<span class="bg-amber-500/30 text-amber-200 text-[10px] px-2 py-1 rounded-full border border-amber-400/50 font-bold"><i class="fa-solid fa-crown"></i> HECHA</span>`:''}
+                    </div>
+                    <p class="text-xs text-amber-100/80 italic mb-3">${w.description}</p>
+                    ${!built?`
+                        <div class="space-y-1 bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs mb-3">
+                            <div class="${canAffordCoins?'text-emerald-400':'text-red-400'}">Monedas: ${gameState.coins}/${w.costCoins}</div>
+                            ${goodsText}
+                        </div>
+                        <button onclick="buildWonder('${w.id}')" ${!canBuild?'disabled':''} class="mt-auto w-full py-2.5 rounded-xl font-bold text-xs ${canBuild?'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-slate-950 shadow-lg glow-gold':'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+                            🏗️ Construir Maravilla
+                        </button>
+                    `:`
+                        <div class="mt-auto py-2.5 text-center text-xs font-bold text-amber-300 bg-amber-950/40 rounded-xl border border-amber-500/40">✓ Bonificación activa</div>
+                    `}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function buildWonder(wonderId){
+            const w=WONDERS[wonderId];
+            if(gameState.wonders.includes(wonderId)) return;
+            if(gameState.coins<w.costCoins){toast('Monedas insuficientes','error');return;}
+            if(w.reqGoods){
+                for(let gk in w.reqGoods){
+                    if((gameState.inventoryGoods[gk]||0)<w.reqGoods[gk]){toast('Bienes insuficientes','error');return;}
+                }
+            }
+            gameState.coins-=w.costCoins;
+            if(w.reqGoods){
+                Object.keys(w.reqGoods).forEach(gk=>{gameState.inventoryGoods[gk]-=w.reqGoods[gk];});
+            }
+            gameState.wonders.push(wonderId);
+            playSound('unlock');
+            toast(`¡Maravilla construida: ${w.name}!`,'gold');
+            addXP(500);
+            renderWonders();
+            updateUI();
+            checkAchievements();
+        }
+
+        /* ============ LOGROS ============ */
+        function renderAchievements(){
+            const container=document.getElementById('achievements-grid');
+            container.innerHTML='';
+            const completedEl=document.getElementById('achievements-progress');
+            if(completedEl) completedEl.textContent=`${gameState.achievements.length} / ${ACHIEVEMENTS.length}`;
+
+            ACHIEVEMENTS.forEach(a=>{
+                const done=gameState.achievements.includes(a.id);
+                const card=document.createElement('div');
+                card.className=`p-4 rounded-2xl border flex items-start gap-3 ${done?'bg-emerald-950/40 border-emerald-600/50':'bg-slate-900 border-slate-800'}`;
+                card.innerHTML=`
+                    <div class="p-2.5 rounded-xl text-lg ${done?'bg-emerald-500/20 text-emerald-400':'bg-slate-950 text-slate-500'} border border-slate-800">
+                        <i class="fa-solid ${done?'fa-trophy':'fa-lock'}"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-sm ${done?'text-emerald-300':'text-slate-200'}">${a.name}</h4>
+                            ${done?`<span class="text-[10px] text-emerald-400 font-bold">+${a.reward} 💎</span>`:`<span class="text-[10px] text-cyan-400 font-bold">${a.reward} 💎</span>`}
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">${a.desc}</p>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        function checkAchievements(){
+            let newAchievements=[];
+            ACHIEVEMENTS.forEach(a=>{
+                if(!gameState.achievements.includes(a.id) && a.check(gameState)){
+                    gameState.achievements.push(a.id);
+                    gameState.diamonds+=a.reward;
+                    newAchievements.push(a);
+                }
+            });
+            if(newAchievements.length>0){
+                newAchievements.forEach(a=>{
+                    toast(`¡Logro: ${a.name}! +${a.reward} 💎`,'gold',4500);
+                });
+                playSound('unlock');
+                updateUI();
+                if(!document.getElementById('view-achievements').classList.contains('hidden')) renderAchievements();
+            }
+        }
+
+        /* ============ STATS / UI ============ */
+        function recalculateStats(){
+            let totalPop=0,usedPop=0,totalHappiness=100;
+            for(let i = 0; i < GRID_TOTAL; i++){
+                const cell = gameState.cityGrid[i];
+                if(!cell) continue;
+                const b=BUILDINGS_CATALOG[cell.buildingId];
+                const level=cell.level||1;
+                const mult=1+(level-1)*0.35;
+                if(b.popProvided) totalPop+=Math.floor(b.popProvided*mult);
+                if(b.popNeeded) usedPop+=b.popNeeded;
+                if(b.happinessProvided) totalHappiness+=b.happinessProvided;
+                if(b.happinessCost) totalHappiness-=b.happinessCost;
+            }
+            gameState.wonders.forEach(id=>{
+                const w=WONDERS[id];
+                if(w.effectType==='happiness') totalHappiness+=w.effectValue;
+                if(w.effectType==='popBoost') totalPop=Math.floor(totalPop*(1+w.effectValue));
+            });
+            gameState.populationTotal=totalPop;
+            gameState.populationUsed=usedPop;
+            gameState.happiness=Math.max(50, totalHappiness);
+        }
+
+        function countBuildings(){
+            let n=0;
+            for(let i = 0; i < GRID_TOTAL; i++) if(gameState.cityGrid[i]) n++;
+            return n;
+        }
+
+        function updateUI(){
+            const popAvail=Math.max(0,gameState.populationTotal-gameState.populationUsed);
+            document.getElementById('res-coins').innerText=gameState.coins.toLocaleString('es-ES');
+            document.getElementById('res-diamonds').innerText=gameState.diamonds;
+            document.getElementById('res-pop').innerText=`${popAvail} / ${gameState.populationTotal}`;
+            document.getElementById('res-happiness').innerText=`${gameState.happiness}%`;
+            document.getElementById('current-era-display').innerText=gameState.era;
+            const goodsEl=document.getElementById('res-goods');
+            if(goodsEl){
+                const distinct=Object.keys(gameState.inventoryGoods).filter(k=>(gameState.inventoryGoods[k]||0)>0).length;
+                goodsEl.innerText=`${distinct}/${Object.keys(GOODS).length}`;
+            }
+
+            const builtEl = document.getElementById('city-built-count');
+            if(builtEl) builtEl.textContent = countBuildings();
+
+            // Nivel / XP
+            const levelEl = document.getElementById('res-level');
+            const xpBar = document.getElementById('res-xp-bar');
+            const xpLabel = document.getElementById('res-xp-label');
+            if(levelEl) levelEl.textContent = gameState.empireLevel;
+            if(xpBar){
+                const curXP = gameState.xp - totalXPForLevel(gameState.empireLevel);
+                const nextXP = totalXPForLevel(gameState.empireLevel+1) - totalXPForLevel(gameState.empireLevel);
+                const pct = Math.max(0, Math.min(100, (curXP/nextXP)*100));
+                xpBar.style.width = pct + '%';
+                if(xpLabel) xpLabel.textContent = `${curXP}/${nextXP}`;
+            }
+            const mv = document.getElementById('view-missions');
+            if(mv && !mv.classList.contains('hidden')){
+                const lvlM = document.getElementById('missions-level');
+                const barM = document.getElementById('missions-xp-bar');
+                const lblM = document.getElementById('missions-xp-label');
+                const bonusM = document.getElementById('missions-prod-bonus');
+                if(lvlM) lvlM.textContent = gameState.empireLevel;
+                if(bonusM) bonusM.textContent = `+${Math.round(getEmpireProductionBonus()*100)}%`;
+                if(barM){
+                    const curXP = gameState.xp - totalXPForLevel(gameState.empireLevel);
+                    const nextXP = totalXPForLevel(gameState.empireLevel+1) - totalXPForLevel(gameState.empireLevel);
+                    const pct = Math.max(0, Math.min(100, (curXP/nextXP)*100));
+                    barM.style.width = pct + '%';
+                    if(lblM) lblM.textContent = `${curXP} / ${nextXP} XP`;
+                }
+            }
+        }
+
+        /* ============ MIGRACIÓN DE TABLERO ANTIGUO ============ */
+        function migrateGrid(parsed){
+            const old = parsed.cityGrid;
+            if(!Array.isArray(old)) return createEmptyGrid();
+            if(old.length === GRID_TOTAL) return old;
+
+            const newGrid = new Array(GRID_TOTAL).fill(null);
+            const oldSide = Math.max(1, Math.round(Math.sqrt(old.length))) || 8;
+            const offX = CENTER_X - Math.floor(oldSide/2);
+            const offY = CENTER_Y - Math.floor(oldSide/2);
+
+            old.forEach((c, i)=>{
+                if(!c) return;
+                const x = (i % oldSide) + offX;
+                const y = Math.floor(i / oldSide) + offY;
+                if(x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return;
+                newGrid[y * GRID_W + x] = c;
+            });
+            return newGrid;
+        }
+
+        /* ============ GUARDADO ============ */
+        function saveGame(){
+            try{
+                localStorage.setItem('foe_game_save_v9',JSON.stringify(gameState));
+                toast('¡Partida guardada!','success');
+            }catch(e){
+                toast('No se pudo guardar (espacio insuficiente)','error');
+            }
+        }
+
+        function loadGame(){
+            const saved=localStorage.getItem('foe_game_save_v9')
+                      || localStorage.getItem('foe_game_save_v8')
+                      || localStorage.getItem('foe_game_save_v7');
+            if(saved){
+                try{
+                    const parsed=JSON.parse(saved);
+                    const baseGoods=createInitialGoods();
+                    parsed.inventoryGoods=Object.assign({},baseGoods,parsed.inventoryGoods||{});
+                    gameState=Object.assign(gameState,parsed);
+
+                    // Migrar / asegurar tablero
+                    gameState.cityGrid = migrateGrid(parsed);
+                    if(!gameState.cityGrid.some(c=>c)) gameState.cityGrid[CENTER_IDX]=createEmptyGrid()[CENTER_IDX];
+
+                    gameState.cityGrid.forEach(c=>{if(c&&!c.level) c.level=1;});
+
+                    if(!gameState.heroes) gameState.heroes=[];
+                    if(!gameState.wonders) gameState.wonders=[];
+                    if(!gameState.achievements) gameState.achievements=[];
+                    if(typeof gameState.diamonds!=='number') gameState.diamonds=5;
+                    if(typeof gameState.xp!=='number') gameState.xp=0;
+                    if(typeof gameState.empireLevel!=='number') gameState.empireLevel=1;
+                    if(typeof gameState.missionsClaimed!=='number') gameState.missionsClaimed=0;
+                    if(typeof gameState.marketTrades!=='number') gameState.marketTrades=0;
+                    if(!gameState.dailyMissions) gameState.dailyMissions=[];
+                    if(!gameState.marketOffers) gameState.marketOffers=[];
+                }catch(e){console.error('Save error',e);}
+            }
+        }
+
+        function resetGame(){
+            if(confirm('¿Seguro que deseas reiniciar tu imperio?')){
+                localStorage.removeItem('foe_game_save_v9');
+                localStorage.removeItem('foe_game_save_v8');
+                localStorage.removeItem('foe_game_save_v7');
+                location.reload();
+            }
+        }
+
+        /* ============ INICIALIZACIÓN ============ */
+        window.onload=function(){
+            loadGame();
+            checkMissionReset();
+            checkMarketRefresh();
+
+            // Garantizar que el tablero tenga siempre al menos un edificio inicial
+            if(!gameState.cityGrid.some(c=>c)){
+                gameState.cityGrid[CENTER_IDX] = {buildingId:'hut',timer:0,ready:false,level:1};
+            }
+
+            initCityGrid();
+
+            // Interacción del tablero (delegación de eventos)
+            const grid = document.getElementById('city-grid');
+            grid.addEventListener('click', (e)=>{
+                const el = e.target.closest('.grid-cell');
+                if(!el) return;
+                if(panMoved) return;
+                handleCellClick(parseInt(el.dataset.index,10));
+            });
+            grid.addEventListener('contextmenu', (e)=>{
+                const el = e.target.closest('.grid-cell');
+                if(!el) return;
+                e.preventDefault();
+                const idx = parseInt(el.dataset.index,10);
+                if(gameState.cityGrid[idx]) showBuildingInfo(idx);
+            });
+            grid.addEventListener('mouseover', (e)=>{
+                const el = e.target.closest('.grid-cell');
+                if(!el) return;
+                const idx = parseInt(el.dataset.index,10);
+                const coord = document.getElementById('cell-coord');
+                if(coord) coord.textContent = `${idx % GRID_W}, ${Math.floor(idx / GRID_W)}`;
+            });
+
+            // Arrastrar para desplazar el mapa
+            const scroller = document.getElementById('city-scroller');
+            let isPanning=false, startX=0, startY=0, startL=0, startT=0;
+            scroller.addEventListener('mousedown', (e)=>{
+                if(e.button!==0) return;
+                isPanning=true; panMoved=false;
+                startX=e.clientX; startY=e.clientY;
+                startL=scroller.scrollLeft; startT=scroller.scrollTop;
+                scroller.classList.add('grabbing');
+            });
+            window.addEventListener('mousemove', (e)=>{
+                if(!isPanning) return;
+                const dx=e.clientX-startX, dy=e.clientY-startY;
+                if(Math.abs(dx)>4 || Math.abs(dy)>4) panMoved=true;
+                scroller.scrollLeft = startL - dx;
+                scroller.scrollTop  = startT - dy;
+            });
+            window.addEventListener('mouseup', ()=>{
+                isPanning=false;
+                scroller.classList.remove('grabbing');
+                setTimeout(()=>{ panMoved=false; }, 0);
+            });
+
+            // Ctrl + rueda del ratón = zoom sobre el tablero
+            scroller.addEventListener('wheel', (e)=>{
+                if(!e.ctrlKey) return;
+                e.preventDefault();
+                zoomCity(e.deltaY < 0 ? 1 : -1);
+            }, {passive:false});
+
+            updateUI();
+            updateMissionDot();
+            centerCityView();
+
+            setTimeout(()=>checkAchievements(),1500);
+            setTimeout(()=>toast('¡Bienvenido! Tablero ampliado a 100×100 casillas. Usa la rueda con Ctrl para el zoom.','info',6000),800);
+        };
+
+        document.getElementById('modal-info').addEventListener('click',e=>{if(e.target.id==='modal-info') closeInfoModal();});
+        document.getElementById('modal-build').addEventListener('click',e=>{if(e.target.id==='modal-build') closeBuildMenu();});
+    </script>
+</body>
+</html>
